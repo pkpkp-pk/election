@@ -13,6 +13,7 @@ import VotingDay from "@/pages/VotingDay";
 import Types from "@/pages/Types";
 import FAQ from "@/pages/FAQ";
 import Glossary from "@/pages/Glossary";
+import Candidates from "@/pages/Candidates";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ function Router() {
         <Route path="/types" component={Types} />
         <Route path="/faq" component={FAQ} />
         <Route path="/glossary" component={Glossary} />
+        <Route path="/candidates" component={Candidates} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

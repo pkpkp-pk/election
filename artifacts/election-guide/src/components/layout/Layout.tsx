@@ -1,12 +1,13 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { Vote, BookOpen, Clock, HelpCircle, MapPin, CheckSquare, Layers, BookText } from "lucide-react";
+import { Vote, BookOpen, Clock, HelpCircle, MapPin, CheckSquare, Layers, BookText, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
+  { href: "/candidates", label: "Candidates", icon: Users },
   { href: "/how-it-works", label: "How Elections Work", icon: Layers },
   { href: "/registration", label: "Voter Registration", icon: CheckSquare },
-  { href: "/timeline", label: "Election Timeline", icon: Clock },
+  { href: "/timeline", label: "Timeline", icon: Clock },
   { href: "/voting-day", label: "Voting Day", icon: MapPin },
   { href: "/types", label: "Types", icon: Vote },
   { href: "/faq", label: "FAQ", icon: HelpCircle },

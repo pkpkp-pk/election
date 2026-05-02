@@ -217,6 +217,84 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
   }
 });
 
+const CANDIDATE_SYSTEM_PROMPT = `You are an expert on Indian politics and elections. When given the name of an Indian politician or candidate, return ONLY a valid JSON object in exactly this format (no markdown, no extra text):
+
+{
+  "name": "Full official name",
+  "aliases": ["Common name", "Nickname if any"],
+  "born": "Birth year or approximate",
+  "gender": "Male/Female/Other",
+  "current_party": "Current party name or 'None/Independent'",
+  "current_party_short": "Short abbreviation like BJP, INC, AAP etc",
+  "career_start": "Year political career began",
+  "career_years": 25,
+  "status": "Active/Retired/Deceased",
+  "current_position": "Current designation if any, e.g. 'Member of Parliament, Varanasi'",
+  "constituencies": [
+    { "name": "Constituency name", "state": "State", "from": "Year", "to": "Year or present", "type": "Lok Sabha/Rajya Sabha/MLA" }
+  ],
+  "parties": [
+    { "party": "Party name", "short": "Abbreviation", "from": "Year", "to": "Year or present", "role": "Role in party if notable" }
+  ],
+  "criminal_cases": {
+    "count": 0,
+    "severity": "None/Minor/Serious/Heinous",
+    "details": ["Case description if any"],
+    "source": "ADR (Association for Democratic Reforms) data",
+    "note": "Data based on self-declared affidavits filed during elections"
+  },
+  "popularity": {
+    "score": 7,
+    "level": "National/State/Regional/Local",
+    "description": "2-3 sentences on how well-known they are and why"
+  },
+  "major_works": [
+    { "title": "Work/achievement title", "description": "Brief description" }
+  ],
+  "brief": "2-3 sentence biographical summary",
+  "disclaimer": "This profile is AI-generated based on publicly available information. It may contain inaccuracies. Always verify with official sources like ECI, ADR, or the candidate's official affidavit."
+}
+
+Rules:
+- criminal_cases.count must be a number (0 if none known)
+- career_years must be a number
+- popularity.score must be 1-10
+- parties array must be chronological oldest first
+- major_works should have 3-5 items
+- constituencies should be chronological
+- If the person is not a known Indian politician, set name to the input, brief to "No verified information found for this person as an Indian politician.", and all arrays to []
+- Never fabricate specific criminal case details — if unsure, set count to 0 and add a note
+- Be factually accurate about well-known politicians`;
+
+router.post("/openai/candidate", async (req, res) => {
+  const name = req.body?.name;
+  if (!name || typeof name !== "string" || name.trim().length === 0) {
+    res.status(400).json({ error: "Missing candidate name" });
+    return;
+  }
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: CANDIDATE_SYSTEM_PROMPT },
+        { role: "user", content: `Get profile for Indian politician: ${name.trim()}` },
+      ],
+      response_format: { type: "json_object" },
+    });
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = { name: name.trim(), brief: "Failed to parse response.", parties: [], constituencies: [], criminal_cases: { count: 0, details: [] }, major_works: [], popularity: { score: 0, description: "" } };
+    }
+    res.json(parsed);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch candidate info" });
+  }
+});
+
 router.post("/openai/ask", async (req, res) => {
   const question = req.body?.question;
   if (!question || typeof question !== "string" || question.trim().length === 0) {
