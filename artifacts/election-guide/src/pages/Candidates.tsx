@@ -84,17 +84,26 @@ function partyInitials(party: string, short?: string | null): string {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function CriminalBadge({ count }: { count: number | null }) {
-  const n = count ?? 0;
-  if (n === 0) return (
+function CriminalBadge({ count, verifyUrl }: { count: number | null; verifyUrl?: string | null }) {
+  if (count === null || count === undefined) {
+    const href = verifyUrl ?? "https://www.myneta.info/LokSabha2024/";
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 text-gray-500 text-xs font-medium hover:border-gray-400 transition-colors">
+        <Info className="h-3 w-3" /> Verify cases
+        <ExternalLink className="h-2.5 w-2.5" />
+      </a>
+    );
+  }
+  if (count === 0) return (
     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-green-700 text-xs font-medium">
       <CheckCircle className="h-3 w-3" /> No cases
     </div>
   );
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${n >= 3 ? "bg-red-50 border-red-200 text-red-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
+    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${count >= 3 ? "bg-red-50 border-red-200 text-red-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
       <AlertTriangle className="h-3 w-3" />
-      {n} case{n > 1 ? "s" : ""}
+      {count} case{count > 1 ? "s" : ""}
     </div>
   );
 }
@@ -186,7 +195,7 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-baseline gap-2 mb-1">
               <h3 className="font-serif font-bold text-base text-foreground leading-tight">{candidate.name}</h3>
-              <CriminalBadge count={candidate.criminalCases} />
+              <CriminalBadge count={candidate.criminalCases} verifyUrl={candidate.sourceUrl} />
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mb-2">
               <span className="flex items-center gap-1">
@@ -246,11 +255,23 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="bg-white rounded-xl border p-3 text-center">
-                    <div className="font-serif text-xl font-bold mb-0.5"
-                      style={{ color: (candidate.criminalCases ?? 0) > 0 ? "#EF4444" : "#138808" }}>
-                      {candidate.criminalCases ?? 0}
-                    </div>
-                    <div className="text-xs text-muted-foreground">Criminal Cases</div>
+                    {candidate.criminalCases === null || candidate.criminalCases === undefined ? (
+                      <a href={candidate.sourceUrl ?? "https://www.myneta.info/LokSabha2024/"} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex flex-col items-center gap-0.5 w-full hover:opacity-80 transition-opacity">
+                        <div className="font-serif text-sm font-bold text-gray-400 flex items-center gap-1">
+                          <ExternalLink className="h-3 w-3" /> Verify
+                        </div>
+                        <div className="text-xs text-muted-foreground">Criminal Cases</div>
+                      </a>
+                    ) : (
+                      <>
+                        <div className="font-serif text-xl font-bold mb-0.5"
+                          style={{ color: candidate.criminalCases > 0 ? "#EF4444" : "#138808" }}>
+                          {candidate.criminalCases}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Criminal Cases</div>
+                      </>
+                    )}
                   </div>
                   <div className="bg-white rounded-xl border p-3 text-center">
                     <div className="font-serif text-sm font-bold text-foreground mb-0.5 truncate">
@@ -595,12 +616,13 @@ export default function Candidates() {
           >
             <div className="container mx-auto px-4 md:px-8 max-w-4xl">
               {/* Source attribution banner */}
-              <div className="mb-5 p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-start gap-2">
-                <Database className="h-3.5 w-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700 leading-relaxed">
-                  Affidavit data sourced from <strong>Association for Democratic Reforms (ADR)</strong> via{" "}
+              <div className="mb-5 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Asset and party data is sourced from ECI affidavits via <strong>ADR/myneta.info</strong>. Criminal case counts are <strong>not shown unless independently verified</strong> — always confirm directly on{" "}
                   <a href="https://www.myneta.info/LokSabha2024/" target="_blank" rel="noopener noreferrer"
-                    className="underline hover:text-blue-900">myneta.info</a> — self-declared by candidates to the Election Commission of India (ECI). AI biography is generated separately and may be inaccurate.
+                    className="underline font-semibold hover:text-amber-900">myneta.info ↗</a>{" "}
+                  before relying on this data.
                 </p>
               </div>
 
