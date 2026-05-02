@@ -7,7 +7,24 @@ import { CreateOpenaiConversationBody, SendOpenaiMessageBody, GetOpenaiConversat
 
 const router = Router();
 
-const STRUCTURED_SYSTEM_PROMPT = `You are Chunav Guide, an expert on Indian elections. When given a question, respond with ONLY a valid JSON object in exactly this format (no markdown, no extra text):
+// ─── Grounding context injected into every prompt ────────────────────────────
+const ELECTION_FACTS = `
+KEY FACTS — Lok Sabha 2024 General Election (COMPLETED):
+- 7 phases: April 19 – June 1, 2024. Results declared June 4, 2024.
+- Total seats: 543. Majority mark: 272.
+- NDA won 293 seats: BJP 240, TDP 16, JD(U) 12, Shiv Sena (Shinde) 7, LJP(RV) 5, others.
+- INDIA alliance won 234 seats: INC 99, SP 37, TMC 29, DMK 22, others.
+- Narendra Modi sworn in as Prime Minister for a third consecutive term on June 9, 2024.
+- Rahul Gandhi won from Wayanad and Rae Bareli (vacated Wayanad, won from Rae Bareli).
+- Voter turnout: ~66.3%. Total electors: ~970 million.
+- This election is COMPLETE. All results are final.
+`.trim();
+
+const STRUCTURED_SYSTEM_PROMPT = `You are Chunav Guide, an expert on Indian elections. You have full knowledge of the completed Lok Sabha 2024 election results.
+
+${ELECTION_FACTS}
+
+When given a question, respond with ONLY a valid JSON object in exactly this format (no markdown, no extra text):
 
 {
   "answer": "A direct, factual 2-3 sentence answer to the question. Be concise and informative.",
@@ -30,7 +47,11 @@ Rules:
 - All content must be about Indian elections, democracy, and civic processes
 - Respond in English unless the question is in Hindi`;
 
-const SYSTEM_PROMPT = `You are Chunav Guide, a helpful assistant for Indian elections. You answer questions about:
+const SYSTEM_PROMPT = `You are Chunav Guide, a helpful assistant for Indian elections. You have full knowledge of the completed Lok Sabha 2024 election results.
+
+${ELECTION_FACTS}
+
+You answer questions about:
 - How Indian elections work (Lok Sabha, Rajya Sabha, Vidhan Sabha, Vidhan Parishad)
 - Voter registration (Form 6, Form 7, Form 8, Form 8A, EPIC/Voter ID card)
 - Voting process (Electronic Voting Machines/EVM, VVPAT, polling booths)
@@ -186,7 +207,7 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
     res.setHeader("Connection", "keep-alive");
 
     const stream = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5",
       messages: [{ role: "system", content: SYSTEM_PROMPT }, ...chatMessages],
       stream: true,
     });
@@ -219,7 +240,11 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
 
 // ─── Candidate Search: DB-first, AI supplement ───────────────────────────────
 
-const CANDIDATE_BIO_PROMPT = `You are an expert on Indian politics. Given a candidate's real affidavit data (name, party, constituency, criminal cases, assets), generate biographical details in ONLY this JSON format (no markdown):
+const CANDIDATE_BIO_PROMPT = `You are an expert on Indian politics. You have full knowledge of the completed Lok Sabha 2024 election results.
+
+${ELECTION_FACTS}
+
+Given a candidate's real affidavit data (name, party, constituency, criminal cases, assets), generate biographical details in ONLY this JSON format (no markdown):
 
 {
   "aliases": ["Common nickname if any"],
@@ -316,7 +341,7 @@ router.post("/openai/candidate-bio", async (req, res) => {
     const context = contextLines.join("\n");
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5",
       messages: [
         { role: "system", content: CANDIDATE_BIO_PROMPT },
         { role: "user", content: `Generate biographical details for this candidate:\n\n${context}` },
@@ -371,7 +396,7 @@ router.post("/openai/candidate", async (req, res) => {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5",
       messages: [
         { role: "system", content: LEGACY_PROMPT },
         { role: "user", content: `Get profile for Indian politician: ${name.trim()}` },
@@ -400,7 +425,7 @@ router.post("/openai/ask", async (req, res) => {
   }
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5",
       messages: [
         { role: "system", content: STRUCTURED_SYSTEM_PROMPT },
         { role: "user", content: question.trim() },
