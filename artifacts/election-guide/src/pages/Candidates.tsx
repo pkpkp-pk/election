@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, User, Shield, Star, Briefcase, AlertTriangle,
@@ -131,6 +131,89 @@ function LoadingSpinner({ size = 4 }: { size?: number }) {
   );
 }
 
+// ─── Wikipedia photo hook ─────────────────────────────────────────────────────
+
+function useWikipediaPhoto(name: string): { photoUrl: string | null; loading: boolean } {
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPhoto() {
+      // Try the exact name first, then a few variants
+      const variants = [
+        name.trim().replace(/\s+/g, "_"),
+        name.trim().replace(/\s+/g, "_") + "_(politician)",
+        name.trim().replace(/\s+/g, "_") + "_(Indian_politician)",
+      ];
+      for (const v of variants) {
+        try {
+          const res = await fetch(
+            `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(v)}`,
+            { headers: { Accept: "application/json" } }
+          );
+          if (!res.ok) continue;
+          const data = await res.json();
+          const url: string | undefined = data?.thumbnail?.source;
+          if (url && !cancelled) {
+            // Request a larger thumb: replace /100px- with /200px-
+            setPhotoUrl(url.replace(/\/\d+px-/, "/200px-"));
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // next variant
+        }
+      }
+      if (!cancelled) setLoading(false);
+    }
+    fetchPhoto();
+    return () => { cancelled = true; };
+  }, [name]);
+
+  return { photoUrl, loading };
+}
+
+// ─── Candidate avatar (photo or party initials fallback) ─────────────────────
+
+function CandidateAvatar({
+  name, color, initials, size = 52,
+}: { name: string; color: string; initials: string; size?: number }) {
+  const { photoUrl, loading } = useWikipediaPhoto(name);
+  const dim = `${size}px`;
+
+  if (loading) {
+    return (
+      <div className="rounded-full bg-gray-100 animate-pulse flex-shrink-0" style={{ width: dim, height: dim }} />
+    );
+  }
+
+  if (photoUrl) {
+    return (
+      <div className="flex-shrink-0 rounded-full overflow-hidden"
+        style={{ width: dim, height: dim, border: `2.5px solid ${color}`, boxSizing: "border-box" }}>
+        <img
+          src={photoUrl}
+          alt={name}
+          className="w-full h-full object-cover object-top"
+          onError={(e) => {
+            const el = e.currentTarget.parentElement as HTMLElement;
+            el.style.border = "none";
+            el.innerHTML = `<div style="width:${dim};height:${dim};background:${color};border-radius:9999px;display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:700">${initials}</div>`;
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-shrink-0 rounded-full flex items-center justify-center text-white font-bold"
+      style={{ width: dim, height: dim, background: color, fontSize: "11px" }}>
+      {initials}
+    </div>
+  );
+}
+
 // ─── Candidate Result Card ────────────────────────────────────────────────────
 
 function CandidateCard({ candidate }: { candidate: DbCandidate }) {
@@ -186,10 +269,14 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
       {/* Main row */}
       <div className="p-5">
         <div className="flex items-start gap-4">
-          {/* Party badge */}
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-white text-xs font-bold"
-            style={{ background: color }}>
-            {initials}
+          {/* Candidate photo / party badge */}
+          <div className="relative flex-shrink-0">
+            <CandidateAvatar name={candidate.name} color={color} initials={initials} size={52} />
+            {/* Party colour dot overlay */}
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-white"
+              style={{ background: color, fontSize: "6px", fontWeight: 700 }}>
+              {(candidate.partyShort ?? initials).slice(0, 2)}
+            </div>
           </div>
 
           <div className="flex-1 min-w-0">
