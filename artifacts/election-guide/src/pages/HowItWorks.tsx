@@ -4,86 +4,98 @@ import { CheckCircle2 } from "lucide-react";
 const stages = [
   {
     number: "01",
-    title: "Candidate Announcement",
+    title: "Announcement of Election Schedule",
     description:
-      "Candidates declare their intention to run, often forming exploratory committees first. They begin building campaign infrastructure, hiring staff, raising money, and establishing name recognition. This phase can begin years before the election.",
+      "The Election Commission of India (ECI) announces the election schedule, including the date(s) of voting, the last date for filing nominations, withdrawal of candidatures, and the date of counting. Once the schedule is announced, the Model Code of Conduct (MCC) comes into force immediately, restricting the ruling party from using government resources or making policy announcements for electoral advantage.",
     details: [
-      "Form an exploratory committee to gauge support",
-      "File candidacy paperwork with the FEC",
-      "Build fundraising networks and donor lists",
-      "Begin public outreach and media appearances",
+      "Election Commission announces schedule and enforces Model Code of Conduct",
+      "General elections may be held in multiple phases across different states",
+      "The ECI coordinates with all states, security forces, and administration",
+      "Dates are chosen to avoid festivals, harvests, and extreme weather where possible",
     ],
   },
   {
     number: "02",
-    title: "Primary Elections & Caucuses",
+    title: "Notification and Filing of Nominations",
     description:
-      "Registered voters within each party choose their preferred candidate. Primaries are state-run elections; caucuses are party-organized gatherings where voters publicly express preferences. Delegates are awarded based on results.",
+      "Once the election notification is issued (gazette notification), candidates can file their nominations with the Returning Officer (RO) of their constituency. Each nomination must be accompanied by a security deposit, a declaration of assets and liabilities, and criminal antecedents (if any). All such information is publicly disclosed.",
     details: [
-      "Open primaries allow any registered voter to participate",
-      "Closed primaries are limited to registered party members",
-      "Caucuses involve in-person deliberation and preference grouping",
-      "Delegates are allocated proportionally or winner-take-all depending on state rules",
+      "Candidates file nominations with the Returning Officer of their constituency",
+      "Security deposit: Rs. 25,000 for Lok Sabha (Rs. 12,500 for SC/ST candidates)",
+      "Criminal history, assets, and liabilities must be declared publicly (Form 26)",
+      "Independent candidates need one proposer from their constituency",
     ],
   },
   {
     number: "03",
-    title: "Party Conventions",
+    title: "Scrutiny of Nominations",
     description:
-      "Each major party holds a national convention where delegates officially nominate their presidential candidate. The nominee then selects a running mate (vice presidential candidate) and delivers an acceptance speech.",
+      "The Returning Officer examines all nomination papers for validity. Objections can be raised by candidates against each other's nominations. The RO accepts or rejects nominations based on eligibility criteria, proper form submission, and legal requirements.",
     details: [
-      "Delegates cast votes to formally nominate the candidate",
-      "Party platform is debated and adopted",
-      "Vice presidential nominee is introduced",
-      "Acceptance speeches set the tone for the general election",
+      "The Returning Officer checks nominations for completeness and eligibility",
+      "Common grounds for rejection: age, citizenship, disqualification under law",
+      "Candidates can be disqualified for criminal convictions above 2 years",
+      "The complete list of valid nominations is published publicly",
     ],
   },
   {
     number: "04",
-    title: "General Election Campaign",
+    title: "Withdrawal of Candidature",
     description:
-      "Nominated candidates campaign across the country, with particular focus on competitive 'swing states.' This phase includes debates, advertising, rallies, and get-out-the-vote efforts. Campaign finance rules regulate contributions and expenditures.",
+      "After scrutiny, candidates have a specified period to withdraw their nominations. This allows parties to consolidate support behind a single candidate, reducing vote-splitting. After the withdrawal deadline, the final list of contesting candidates is published and ballot papers (or EVM ballot units) are prepared.",
     details: [
-      "Presidential debates typically held in September and October",
-      "Campaigns focus resources on battleground states",
-      "Early voting and mail-in ballot options open in most states",
-      "Both parties intensify ground game and voter outreach",
+      "Candidates can withdraw only within the specified period",
+      "Party-level negotiations often happen during this window",
+      "Final candidate list is published and EVMs are programmed accordingly",
+      "Symbol allotment happens at this stage — recognised parties get reserved symbols",
     ],
   },
   {
     number: "05",
-    title: "Election Day",
+    title: "Election Campaign",
     description:
-      "Held on the first Tuesday after the first Monday in November. Polling places are open for in-person voting. Results are reported by media outlets throughout the night as precincts report, though official certification takes weeks.",
+      "Candidates, parties, and their supporters campaign across the constituency. The Model Code of Conduct strictly governs permissible activities. Campaign expenditure limits are set by the ECI (Rs. 95 lakh per candidate for Lok Sabha in large states). Campaigning must stop 48 hours before polling begins (the 'campaign silence' period).",
     details: [
-      "Polls typically open from 6 AM to 8 PM (times vary by state)",
-      "Voters who are in line when polls close have the right to vote",
-      "Mail-in and absentee ballots may continue to be counted after Election Day",
-      "Media calls races based on vote counts and statistical projections",
+      "Campaign spending is capped and closely monitored by ECI observers",
+      "Political advertisements on TV/radio require pre-certification",
+      "Paid news and fake news are prohibited under MCC",
+      "The 48-hour 'silence period' before polling bans public campaigning",
     ],
   },
   {
     number: "06",
-    title: "Electoral College",
+    title: "Polling Day",
     description:
-      "The President is not elected directly by popular vote but by 538 Electoral College electors. Each state's electors (equal to its congressional delegation) meet in December to cast their votes. A candidate needs 270 to win.",
+      "Voters go to their designated polling booths, identified by their voter ID (EPIC) card. India uses Electronic Voting Machines (EVMs) paired with Voter Verifiable Paper Audit Trail (VVPAT) machines. Central Armed Police Forces are deployed for security. The ECI appoints sector officers, observers, and microobservers to ensure free and fair voting.",
     details: [
-      "Most states use winner-take-all allocation of electors",
-      "Maine and Nebraska allocate electors by congressional district",
-      "Electors meet in their state capitals in mid-December",
-      "Congress counts and certifies Electoral votes in early January",
+      "Polling typically runs from 7 AM to 6 PM (hours may vary by region)",
+      "Voters press the button next to their chosen candidate on the EVM",
+      "VVPAT machine displays a printed slip for 7 seconds for verification",
+      "Voters with disabilities receive priority access and assistance",
     ],
   },
   {
     number: "07",
-    title: "Certification & Inauguration",
+    title: "Counting of Votes",
     description:
-      "States certify their results, and Congress formally counts the Electoral votes in a joint session. The winning candidate is inaugurated as President on January 20th of the following year, taking the oath of office.",
+      "On the designated counting day, Electronic Voting Machines are brought to counting centres under strict security. Representatives of each candidate (counting agents) observe the process. Votes are tallied round by round for each assembly segment. The Returning Officer declares the results and issues the election certificate to the winner.",
     details: [
-      "States certify results within weeks of Election Day",
-      "Congress meets in joint session to count Electoral votes",
-      "Any objections to state results require majority vote in both chambers",
-      "Inauguration Day is January 20th — the transfer of power is complete",
+      "EVMs are stored in strongrooms under 24/7 CCTV and multi-party security seals",
+      "Postal ballots are counted before EVM votes in the same round",
+      "In a tie, the Returning Officer casts the deciding vote by lot",
+      "Results are entered into the ECI's RESULTS system in real time",
+    ],
+  },
+  {
+    number: "08",
+    title: "Formation of Government",
+    description:
+      "After Lok Sabha results, the President invites the leader of the party or coalition with a majority (272+ seats) to form the government. The Prime Minister and Cabinet are sworn in. If no single party has a majority, coalition negotiations take place. State election results lead to similar processes with the Governor inviting the Chief Minister.",
+    details: [
+      "A party or coalition needs 272+ seats in the 543-member Lok Sabha for majority",
+      "In hung assemblies, the President uses constitutional discretion to invite the largest party",
+      "The PM is sworn in by the President; Cabinet ministers by the PM's recommendation",
+      "A no-confidence motion can bring down the government at any time",
     ],
   },
 ];
@@ -92,9 +104,9 @@ export default function HowItWorks() {
   return (
     <div className="container mx-auto px-4 py-16 max-w-4xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">How Elections Work</h1>
+        <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">How Indian Elections Work</h1>
         <p className="text-xl text-muted-foreground mb-16 max-w-2xl">
-          From the first campaign announcement to inauguration day — here is the complete journey of a U.S. presidential election.
+          From the Election Commission's announcement to the swearing-in of the new government — the complete journey of an Indian General Election.
         </p>
       </motion.div>
 

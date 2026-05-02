@@ -3,50 +3,53 @@ import { cn } from "@/lib/utils";
 
 const timelineEvents = [
   {
-    phase: "Year Before Election",
+    phase: "Before the Election (6–12 Months Prior)",
     color: "bg-blue-500",
     events: [
-      { month: "January–June", title: "Candidate Announcements Begin", description: "Major candidates form exploratory committees and begin declaring their candidacies. Fundraising ramps up significantly." },
-      { month: "Ongoing", title: "FEC Filing Deadlines", description: "Candidates file regular financial disclosure reports with the Federal Election Commission, showing donations received and expenditures." },
+      { month: "Ongoing", title: "Electoral Roll Revision", description: "The Election Commission conducts continuous and summary revision of electoral rolls. Eligible citizens can enrol, update, or correct their details throughout the year. The final electoral roll is published before the election notification." },
+      { month: "Months before", title: "Delimitation (Once a Decade)", description: "Constituency boundaries are redrawn by the Delimitation Commission after each Census to reflect population changes. This process determines the number and geographic extent of parliamentary and assembly constituencies." },
+      { month: "Pre-election", title: "Booth Level Officer (BLO) Activity", description: "BLOs visit every household in their assigned booth area to verify voter details, add new voters, and remove deceased or shifted voters. This is the ground-level backbone of India's voter registration system." },
     ],
   },
   {
-    phase: "Primary Season (Jan–June, Election Year)",
+    phase: "Election Announcement Phase",
     color: "bg-indigo-500",
     events: [
-      { month: "February", title: "Iowa Caucuses & New Hampshire Primary", description: "Traditionally the first contests, giving early momentum to candidates. Results have outsized influence despite small delegate counts." },
-      { month: "March (Super Tuesday)", title: "Super Tuesday", description: "The largest single primary day, with over a dozen states voting simultaneously. Often decisive in determining the frontrunner in each party." },
-      { month: "March–June", title: "Remaining State Primaries", description: "The rest of the states hold their primaries and caucuses. Candidates accumulate delegates toward the nomination threshold." },
-      { month: "June", title: "Primary Season Ends", description: "The final primaries are held. Candidates who have secured enough delegates effectively clinch their party's nomination." },
+      { month: "Announcement Day", title: "ECI Announces Election Schedule", description: "The Election Commission holds a press conference to announce the dates for voting, nominations, scrutiny, withdrawal, and counting. The Model Code of Conduct comes into force immediately upon announcement." },
+      { month: "Announcement Day", title: "Model Code of Conduct (MCC) Begins", description: "The MCC prohibits the ruling government from announcing new policies, schemes, or using state resources for electoral gain. It covers political parties, candidates, and the government apparatus." },
+      { month: "First week", title: "Election Notification (Gazette)", description: "The formal gazette notification is issued for each phase of voting, triggering the nomination filing window. This is the official legal start of the election process in each constituency." },
     ],
   },
   {
-    phase: "Convention Season (July–August)",
+    phase: "Nomination and Campaign Phase",
     color: "bg-violet-500",
     events: [
-      { month: "July", title: "Party Conventions", description: "The Democratic and Republican parties hold their national conventions, formally nominating their presidential and vice-presidential candidates." },
-      { month: "August", title: "VP Selection Announced", description: "Presidential nominees announce their vice-presidential picks, typically timed to generate maximum media attention." },
+      { month: "Days 1–7 after notification", title: "Filing of Nominations", description: "Candidates file their nomination papers with the Returning Officer, along with security deposits, affidavits declaring assets, liabilities, and criminal history (if any)." },
+      { month: "Day 8", title: "Scrutiny of Nominations", description: "The Returning Officer scrutinises all nominations for legal eligibility. Candidates or their agents can object to any nomination. Defective nominations are given a chance to be corrected." },
+      { month: "Day 9", title: "Last Date for Withdrawal", description: "Final deadline for candidates to withdraw their candidacy. After this date, the definitive list of contesting candidates is published and EVM ballot units are programmed with candidate names and symbols." },
+      { month: "Days 10 to Poll-1", title: "Election Campaign", description: "Parties and candidates campaign with rallies, door-to-door outreach, advertising, and media appearances. ECI observers monitor spending and conduct. The Flying Squad watches for distribution of cash or gifts." },
+      { month: "Poll Day – 48 hrs", title: "Silence Period Begins", description: "No public meetings, rallies, or processions. No political advertising. Social media campaigning that targets the constituency is also prohibited during this 48-hour window." },
     ],
   },
   {
-    phase: "General Election Campaign (Sept–Nov)",
+    phase: "Polling Day",
     color: "bg-amber-500",
     events: [
-      { month: "September", title: "Presidential Debates Announced", description: "The Commission on Presidential Debates announces the schedule and formats for the general election debates." },
-      { month: "September–October", title: "Presidential & VP Debates", description: "Nationally televised debates give candidates a direct platform to contrast their positions and speak to tens of millions of viewers." },
-      { month: "October", title: "Early Voting Opens", description: "Most states open early in-person voting windows, allowing voters to cast ballots before Election Day. Absentee/mail-in ballot requests due." },
-      { month: "Late October", title: "Final Campaign Sprint", description: "Candidates concentrate in battleground states. Advertising spending peaks. Get-out-the-vote operations reach maximum intensity." },
+      { month: "Polling Day", title: "EVMs Transported to Booths", description: "Sealed Electronic Voting Machines are transported to polling stations under CAPF escort. Mock polling is conducted in the presence of candidates' agents before voting begins to demonstrate EVM accuracy." },
+      { month: "7:00 AM", title: "Polls Open", description: "Polling stations open across the constituency. Voters queue at their designated booth, present their EPIC card or approved alternate ID, get their finger inked, and cast their vote on the EVM." },
+      { month: "6:00 PM", title: "Polls Close", description: "All voters in the queue at 6 PM have the right to vote. After the last voter casts their ballot, the Presiding Officer seals the EVM and prepares the documentation for handover." },
+      { month: "Evening", title: "EVMs Sealed and Stored", description: "EVMs are sealed in the presence of candidates' polling agents, who may affix their own seals. Machines are transported to strongrooms under tight security and multi-party seal verification." },
     ],
   },
   {
-    phase: "Election & Results (November–January)",
-    color: "bg-red-500",
+    phase: "Counting and Result",
+    color: "bg-green-500",
     events: [
-      { month: "First Tuesday, November", title: "Election Day", description: "Polls open across the country. In-person voting takes place at thousands of polling locations nationwide. Results begin reporting after polls close." },
-      { month: "November–December", title: "Vote Counting & State Certification", description: "States count all valid ballots, including mail-in and absentee votes received after Election Day. Each state certifies its final results." },
-      { month: "Mid-December", title: "Electoral College Meets", description: "Electors gather in their state capitals to cast official Electoral votes for President and Vice President." },
-      { month: "January 6", title: "Congress Counts Electoral Votes", description: "A joint session of Congress, presided over by the Vice President, officially counts and certifies the Electoral votes." },
-      { month: "January 20", title: "Inauguration Day", description: "The President-elect is sworn in as President of the United States on the steps of the U.S. Capitol, completing the transfer of power." },
+      { month: "Counting Day", title: "Postal Ballots Counted First", description: "Votes cast via postal ballot (by eligible absentee voters such as government servants on election duty, military personnel, and overseas voters) are counted in the first round." },
+      { month: "Counting Day", title: "EVM Votes Counted Round by Round", description: "Each round covers one assembly segment. Results from all rounds are aggregated to determine the winner. The entire process is observed by candidates' counting agents and ECI observers." },
+      { month: "Counting Day", title: "VVPAT Verification", description: "By Supreme Court order, VVPAT slips from 5 randomly selected polling stations per constituency are verified against EVM results before the final result is declared." },
+      { month: "After counting", title: "Result Declared and Certificate Issued", description: "The Returning Officer declares the winning candidate and issues the election certificate. The result is entered into the ECI's online system and formally communicated to the House of the People (Lok Sabha Secretariat)." },
+      { month: "Post-result", title: "Formation of Government", description: "After Lok Sabha elections, the President invites the leader of the majority party or coalition to form the government. The Prime Minister and Cabinet are sworn in. The new Lok Sabha holds its first session soon after." },
     ],
   },
 ];
@@ -55,9 +58,9 @@ export default function Timeline() {
   return (
     <div className="container mx-auto px-4 py-16 max-w-4xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">Election Timeline</h1>
+        <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">Indian Election Timeline</h1>
         <p className="text-xl text-muted-foreground mb-16 max-w-2xl">
-          Key milestones and dates across a full presidential election cycle, from the earliest candidate announcements to inauguration day.
+          Key milestones and dates across a Lok Sabha or Vidhan Sabha election cycle — from the ECI announcement to the formation of government.
         </p>
       </motion.div>
 

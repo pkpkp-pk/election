@@ -5,82 +5,86 @@ import { cn } from "@/lib/utils";
 
 const faqs = [
   {
-    category: "Registration",
+    category: "Voter Registration",
     questions: [
       {
-        q: "What if I missed the registration deadline?",
-        a: "Depends on your state. Some states offer same-day voter registration at the polls, meaning you can register and vote on Election Day. Others have automatic voter registration through the DMV. If you missed the deadline in your state, you may still be able to vote a provisional ballot in some cases. Check your state election authority's website for current rules.",
+        q: "How do I register as a voter in India?",
+        a: "Fill Form 6 on the Voter Service Portal (voters.eci.gov.in), via the Voter Helpline App, or in person at your Electoral Registration Officer (ERO) or Booth Level Officer (BLO). You must be a citizen of India, at least 18 years old, and ordinarily resident of the constituency. Submit proof of age and residence along with the form."
       },
       {
-        q: "How do I check if I'm already registered?",
-        a: "Visit vote.gov or your state's official election website and use the voter registration lookup tool. You'll typically need your name, date of birth, and address. It's a good idea to check your registration status a few weeks before any election, since records can change.",
+        q: "What is the qualifying date for voter registration?",
+        a: "The qualifying date is 1st January of the year of the revision of the electoral roll. To be eligible to register, you must be 18 years of age as on 1st January of that year. However, since 2023, there are now four qualifying dates per year — 1st January, 1st April, 1st July, and 1st October — allowing more frequent enrolment."
       },
       {
-        q: "I moved recently. Do I need to re-register?",
-        a: "Yes, if you moved to a different county or state, you should update your voter registration with your new address. Depending on timing, you may be able to update at the polls on Election Day in states with same-day registration. If you moved within the same county, some states update your registration automatically — but verify to be safe.",
+        q: "What documents do I need to register?",
+        a: "Proof of age (birth certificate, Aadhaar, passport, school leaving certificate, or PAN card) and proof of residence (Aadhaar, passport, utility bill, bank passbook, or rent agreement). A recent passport-size photograph is also required. Documents can be uploaded online or submitted physically."
       },
       {
-        q: "Can I register to vote online?",
-        a: "Most states offer online voter registration through their official state or DMV websites. Some states still require paper registration. Visit vote.gov to find your state's registration options. Note: online registration typically requires a state-issued ID or Social Security number for identity verification.",
+        q: "How do I check if my name is on the electoral roll?",
+        a: "Visit voters.eci.gov.in or use the Voter Helpline App. You can search by your EPIC number, name and date of birth, or your mobile number linked to your voter ID. You can also call the National Voter Helpline at 1950."
+      },
+      {
+        q: "What should I do if I've moved to a new address?",
+        a: "File Form 8A (Transposition of entry in the electoral roll) to shift your registration to your new polling booth within the same constituency, or file Form 6 to register afresh in your new constituency if you've moved to a different area. Update your address promptly to ensure you can vote in the right place."
       },
     ],
   },
   {
-    category: "Voting",
+    category: "Voter ID (EPIC Card)",
     questions: [
       {
-        q: "What is early voting?",
-        a: "Early voting allows you to cast your ballot in person before Election Day, typically at a designated early voting location. Dates and hours vary by state — some states offer early voting for several weeks before the election, while others offer only a few days. Check your state election website for your specific early voting window and locations.",
+        q: "What is an EPIC card?",
+        a: "EPIC stands for Electors' Photo Identity Card — commonly called the Voter ID card. It is issued by the Election Commission of India to every registered voter. It serves as the primary identity document at the polling booth and is also a valid government ID for many other purposes."
       },
       {
-        q: "What is absentee voting and how is it different from mail-in voting?",
-        a: "Both terms refer to receiving and returning your ballot by mail rather than voting in person. Traditionally, 'absentee' required an excuse (travel, illness, disability), while 'vote-by-mail' states send ballots to all registered voters automatically. Today, many states have moved to no-excuse absentee voting, and the terms are often used interchangeably. Check your state's current rules.",
+        q: "Can I vote without my Voter ID card?",
+        a: "Yes. The ECI accepts 12 alternative photo identity documents in case your EPIC card is unavailable or damaged. These include Aadhaar card, passport, driving licence, PAN card, MNREGA job card, passbook with photo from a bank or post office, health insurance smart card (ESIC/CGHS), pension documents with photograph, service ID cards issued by Central/State government, and others as notified."
       },
       {
-        q: "What if I request a mail-in ballot but want to vote in person?",
-        a: "Rules vary by state. In many states, you can bring your unvoted mail-in ballot to the polling place, surrender it, and vote in person. In others, you'll need to vote a provisional ballot. If you're unsure, the safest approach is to mail your ballot back promptly or vote in person before requesting a mail ballot at all.",
-      },
-      {
-        q: "Can I take a photo of my ballot?",
-        a: "Laws vary significantly by state. Some states permit ballot selfies, others explicitly ban them to prevent vote buying or coercion. Before photographing your completed ballot, check your state's specific election law. Many states allow you to photograph your blank sample ballot, which is a safer alternative.",
+        q: "How do I get a digital copy of my Voter ID?",
+        a: "You can download the e-EPIC (electronic Voter ID) from the Voter Service Portal (voters.eci.gov.in) as a PDF. It is legally equivalent to the physical EPIC card. Log in with your registered mobile number, enter your EPIC number, and download the PDF. The e-EPIC has a QR code for easy verification."
       },
     ],
   },
   {
-    category: "Election Day",
+    category: "Voting Process",
     questions: [
       {
-        q: "What ID do I need to bring to vote?",
-        a: "ID requirements vary significantly by state. Strict photo ID states require a government-issued photo ID (driver's license, passport, state ID). Other states accept a wider range of documents, or allow you to sign an affidavit if you lack ID. Some states have no ID requirement at all. Check your state's specific rules at vote.gov well before Election Day.",
+        q: "What is an EVM and how does it work?",
+        a: "EVM stands for Electronic Voting Machine. It has two units — a Control Unit (operated by the Presiding Officer) and a Ballot Unit (used by the voter). The Ballot Unit shows all candidates with their names, symbols, and blue buttons. You press the button next to your choice. A beep and a light confirm your vote was recorded. EVMs are standalone, non-networked machines — they cannot be remotely accessed or hacked."
       },
       {
-        q: "What is a provisional ballot?",
-        a: "A provisional ballot is a safeguard for voters whose eligibility can't be immediately verified at the polls — for example, if your name isn't on the voter rolls, your ID doesn't match, or you moved and didn't update your registration. Election officials set it aside and review it after Election Day. If your eligibility is confirmed, your vote is counted.",
+        q: "What is VVPAT?",
+        a: "VVPAT stands for Voter Verifiable Paper Audit Trail. It is a machine connected to the EVM that prints a paper slip showing the candidate you voted for (name and symbol). The slip is visible through a transparent window for 7 seconds before dropping into a sealed compartment. It allows you to independently verify your vote was recorded as intended."
       },
       {
-        q: "Can I get time off work to vote?",
-        a: "Many states have laws requiring employers to give workers paid time off to vote, though the specifics vary — some states require a set number of hours, others require employers to grant time only if your work schedule doesn't allow enough time to vote outside working hours. Check your state's voting leave laws.",
+        q: "What is NOTA?",
+        a: "NOTA stands for None of the Above. It is an option on the EVM ballot that allows voters to register their disapproval of all contesting candidates without abstaining from voting. NOTA was introduced by the Supreme Court of India in 2013. A NOTA vote is counted but does not lead to a re-election — the candidate with the highest votes still wins."
       },
       {
-        q: "What if I need help voting due to a disability?",
-        a: "Under federal law, voters with disabilities have the right to accessible polling places, assistance from a person of their choice (with some limitations), and accessible voting machines. If you need assistance, you can bring a person you trust to help you in the voting booth, except in some states where election officials may not serve as your assistant.",
+        q: "What is a Postal Ballot?",
+        a: "Postal ballots allow eligible voters to vote by post without going to a polling station. They are available to government employees on election duty, members of the armed forces, police officers on duty outside their constituency, and persons with disabilities (in notified constituencies). Postal ballots must be returned before counting begins."
       },
     ],
   },
   {
-    category: "Results & Counting",
+    category: "Election Rules and Ethics",
     questions: [
       {
-        q: "How are votes counted?",
-        a: "In most jurisdictions, paper ballots are scanned by optical scanners that tabulate results. Some precincts use direct-recording electronic (DRE) machines. Results are aggregated at the county level and reported to the state. Mail-in and absentee ballots are typically counted separately, sometimes not until after Election Night, which is why final results can take days.",
+        q: "What is the Model Code of Conduct?",
+        a: "The Model Code of Conduct (MCC) is a set of guidelines issued by the Election Commission of India for political parties and candidates. It comes into force the moment the election schedule is announced and remains until results are declared. It prohibits use of government machinery for election purposes, communal appeals, vote-buying, and other malpractices."
       },
       {
-        q: "Why does it sometimes take days to know the results?",
-        a: "Counting takes time — especially mail-in ballots, which may arrive right up to the deadline and must be processed, verified, and counted. Additionally, some states don't begin processing mail ballots until Election Day. This is normal and a sign the system is working carefully. Projected results from media outlets are estimates; official results come later.",
+        q: "What is the campaign spending limit?",
+        a: "For Lok Sabha elections, the campaign expenditure limit per candidate is Rs. 95 lakh in larger states and Rs. 75 lakh in smaller states and UTs (as revised in 2022). For Vidhan Sabha elections, it ranges from Rs. 28 lakh to Rs. 40 lakh per candidate. The ECI deploys expenditure observers and flying squads to monitor compliance."
       },
       {
-        q: "What is the Electoral College and why does it exist?",
-        a: "The Electoral College is the formal body that elects the President and Vice President. Each state gets electors equal to its number of representatives plus its two senators (totaling 538). A candidate needs 270 electoral votes to win. It was established by the Constitutional Convention in 1787 as a compromise between direct popular election and congressional selection of the president.",
+        q: "Is it legal to give or take money/gifts for votes?",
+        a: "No. Bribery to influence votes is a criminal offence under the Indian Penal Code and the Representation of the People Act, 1951. Both the giver and receiver can be prosecuted. The ECI operates Flying Squads and Static Surveillance Teams to detect and seize cash, liquor, drugs, and gifts being distributed during elections. You can report such activity on the cVIGIL app."
+      },
+      {
+        q: "What is the 'Silence Period' before polling?",
+        a: "Campaigning is prohibited for 48 hours before the scheduled close of polling in a constituency. During this period, no public meetings, rallies, or processions are allowed. Social media posts targeted at voters in the constituency are also restricted. This allows voters to reflect on their choice without last-minute campaign pressure."
       },
     ],
   },
@@ -129,7 +133,7 @@ export default function FAQ() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">Frequently Asked Questions</h1>
         <p className="text-xl text-muted-foreground mb-16 max-w-2xl">
-          Straightforward answers to the questions voters ask most often — no jargon, no spin.
+          Clear answers to the questions Indian voters ask most — about registration, voting, EVMs, and election rules.
         </p>
       </motion.div>
 

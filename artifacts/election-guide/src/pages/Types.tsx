@@ -3,101 +3,101 @@ import { cn } from "@/lib/utils";
 
 const electionTypes = [
   {
-    label: "Presidential Elections",
+    label: "Lok Sabha (General) Elections",
     color: "bg-blue-500/10 border-blue-500/30 text-blue-700",
     dot: "bg-blue-500",
-    frequency: "Every 4 years",
+    frequency: "Every 5 years",
     description:
-      "Held every four years on the first Tuesday after the first Monday in November. Voters choose electors to the Electoral College, who then formally elect the President and Vice President. All 435 House seats and one-third of the Senate are also up for election simultaneously.",
+      "Elections to the House of the People — the lower house of India's bicameral Parliament. Held across 543 constituencies (plus 2 Anglo-Indian nominated seats until 2020) under the First-Past-the-Post (FPTP) system. The party or coalition winning a majority (272+ seats) forms the Union Government, and its leader becomes the Prime Minister.",
     keyFacts: [
-      "Next presidential election: November 2028",
-      "538 total Electoral votes — 270 needed to win",
-      "All House seats and ~35 Senate seats also on the ballot",
-      "Voter turnout is typically highest in presidential election years",
+      "543 directly elected constituencies across India",
+      "Voting age: 18 years (lowered from 21 by the 61st Constitutional Amendment, 1989)",
+      "Each MP represents one constituency — winner needs only plurality, not majority",
+      "Last held: April–June 2024 (18th Lok Sabha); Next due: 2029",
     ],
   },
   {
-    label: "Midterm Elections",
+    label: "Vidhan Sabha (State Legislative Assembly) Elections",
     color: "bg-indigo-500/10 border-indigo-500/30 text-indigo-700",
     dot: "bg-indigo-500",
-    frequency: "Every 2 years (between presidential elections)",
+    frequency: "Every 5 years (state-specific)",
     description:
-      "Held two years into a presidential term. All 435 House seats and roughly one-third of the Senate seats are contested. Many governors and state legislatures are elected too. Midterms historically show lower turnout than presidential elections, making individual votes particularly impactful.",
+      "Elections to the Legislative Assembly of each state and Union Territory with legislature. Each state has its own Vidhan Sabha with constituencies proportional to its population. The party winning a majority forms the State Government, and its leader becomes the Chief Minister. Governed by the same Representation of the People Act, 1951.",
     keyFacts: [
-      "Next midterm elections: November 2026",
-      "No presidential race — focus is on Congress and state offices",
-      "Typically seen as a referendum on the sitting president",
-      "Historically, the president's party loses seats in midterms",
+      "29 state legislative assemblies (Vidhan Sabhas) + Delhi and Puducherry",
+      "Seat count ranges from 32 (Sikkim) to 403 (Uttar Pradesh)",
+      "Elections staggered across states — rarely simultaneous with Lok Sabha",
+      "One Nation One Election is a proposal to synchronise all elections, still under debate",
     ],
   },
   {
-    label: "Local Elections",
+    label: "Rajya Sabha Elections",
     color: "bg-green-500/10 border-green-500/30 text-green-700",
     dot: "bg-green-500",
-    frequency: "Varies by jurisdiction",
+    frequency: "Biennial (one-third retire every 2 years)",
     description:
-      "Arguably the most impactful elections on daily life. Local elections determine who controls school boards, city councils, county commissioners, sheriffs, judges, mayors, and more. These officials directly shape local taxes, schools, public safety, and community services.",
+      "Members of the Rajya Sabha (Council of States — the upper house) are not directly elected by citizens. They are elected by the elected members of State Legislative Assemblies and Union Territory legislatures, using the Single Transferable Vote (STV) method with proportional representation. The Rajya Sabha is a permanent house — it cannot be dissolved.",
     keyFacts: [
-      "Often held in odd years (not aligned with federal elections)",
-      "Races can be decided by very small margins — sometimes single digits",
-      "Many local races are nonpartisan (no party labels on the ballot)",
-      "Voter turnout in local elections is often extremely low",
+      "245 total seats (233 elected + 12 nominated by the President)",
+      "Members serve 6-year terms; one-third retire every 2 years",
+      "Voting by state legislators using the STV method with open ballot",
+      "Rajya Sabha members cannot be directly elected by the public",
     ],
   },
   {
-    label: "Special Elections",
-    color: "bg-amber-500/10 border-amber-500/30 text-amber-700",
-    dot: "bg-amber-500",
-    frequency: "Held as needed",
-    description:
-      "Called outside the regular election schedule to fill a vacant seat — when a representative dies, resigns, or is removed from office. Special elections can occur at any time of year and for any level of government.",
-    keyFacts: [
-      "Can be called by a governor or other authority depending on the seat",
-      "May use different rules than general elections (e.g., runoffs if no majority)",
-      "Often very low turnout — engaged voters have outsized influence",
-      "Results can shift the balance of power in Congress",
-    ],
-  },
-  {
-    label: "Open vs. Closed Primaries",
+    label: "Presidential and Vice-Presidential Elections",
     color: "bg-purple-500/10 border-purple-500/30 text-purple-700",
     dot: "bg-purple-500",
-    frequency: "Part of primary election cycle",
+    frequency: "Every 5 years",
     description:
-      "The rules for who can vote in a primary election vary significantly by state. Open primaries allow any registered voter to participate regardless of party. Closed primaries restrict participation to registered members of that party. Semi-open or semi-closed primaries fall somewhere in between.",
+      "The President of India is elected by an Electoral College comprising elected members of both Houses of Parliament and elected members of all State Legislative Assemblies. Votes are weighted based on population and representation. The Vice President is elected by members of both Houses of Parliament.",
     keyFacts: [
-      "Open: any voter can choose which party's primary to vote in",
-      "Closed: only registered party members may vote in that party's primary",
-      "Semi-closed: registered party members + unaffiliated voters",
-      "Top-two primaries (used in CA, WA): all candidates on one ballot, top two advance",
+      "Indirect election — the public does not vote directly for the President",
+      "Electoral College uses Single Transferable Vote with proportional representation",
+      "Weighted votes ensure states with larger populations have proportional influence",
+      "The President can be impeached by Parliament with a two-thirds majority",
     ],
   },
   {
-    label: "Runoff Elections",
-    color: "bg-rose-500/10 border-rose-500/30 text-rose-700",
-    dot: "bg-rose-500",
-    frequency: "Following inconclusive primary or general elections",
+    label: "By-Elections (Upchunav)",
+    color: "bg-amber-500/10 border-amber-500/30 text-amber-700",
+    dot: "bg-amber-500",
+    frequency: "As needed",
     description:
-      "When no candidate receives the required threshold of votes (often 50%), some jurisdictions hold a runoff between the top candidates. Common in Southern states and some primaries. Runoffs give voters a second opportunity to choose between the top contenders.",
+      "By-elections (also called by-polls or upchunav) are held to fill a vacant seat in the Lok Sabha, Rajya Sabha, or any State Legislature. Vacancies arise due to death, resignation, disqualification, or court orders. By-elections follow the same process as general elections and must be held within 6 months of a seat becoming vacant.",
     keyFacts: [
-      "Most common at the state and local level",
-      "Typically held 4–6 weeks after the initial election",
-      "Turnout is usually much lower than the original election",
-      "Ranked-choice voting can eliminate the need for separate runoffs",
+      "Must be held within 6 months of a seat falling vacant",
+      "Result does not change the composition of the majority significantly in most cases",
+      "Often held simultaneously for multiple constituencies across states",
+      "By-elections are closely watched as tests of voter mood between general elections",
     ],
   },
   {
-    label: "Ballot Measures & Propositions",
+    label: "Local Body Elections",
     color: "bg-teal-500/10 border-teal-500/30 text-teal-700",
     dot: "bg-teal-500",
-    frequency: "Appear on regular election ballots",
+    frequency: "Every 5 years (state-specific)",
     description:
-      "Ballot measures allow voters to directly vote on laws, constitutional amendments, bond measures, and policy questions. Types include initiatives (citizen-led), referenda (legislature-referred), and constitutional amendments. They appear at state, county, and city levels.",
+      "India's three-tier Panchayati Raj system and Urban Local Body elections cover Gram Panchayats, Panchayat Samitis, Zila Parishads, Municipal Corporations, Municipalities, and Nagar Panchayats. These are conducted by State Election Commissions (not the ECI) and are critical for local governance, development, and direct citizen participation.",
     keyFacts: [
-      "Initiative: citizens collect signatures to place a measure on the ballot",
-      "Referendum: the legislature refers a measure to voters for approval",
-      "Bond measures ask voters to authorize government borrowing for specific projects",
-      "Reading the full text of ballot measures is always recommended before voting",
+      "Conducted by State Election Commissions — separate from ECI jurisdiction",
+      "Includes Gram Panchayats, Municipal Corporations, Zila Parishads, and more",
+      "One-third of all seats in Panchayat bodies reserved for women (many states: 50%)",
+      "Seat reservations for SC, ST, and OBC communities as per state laws",
+    ],
+  },
+  {
+    label: "Referendums and Plebiscites",
+    color: "bg-rose-500/10 border-rose-500/30 text-rose-700",
+    dot: "bg-rose-500",
+    frequency: "Rare — held under special circumstances",
+    description:
+      "India's Constitution does not provide a direct mechanism for nationwide referendums. However, limited consultative processes have been used historically. The most notable case was the 1967 Goa Opinion Poll, which determined whether Goa would merge with Maharashtra or remain a Union Territory. International plebiscites (e.g., proposed for Kashmir) exist as geopolitical discussions, not settled internal processes.",
+    keyFacts: [
+      "No constitutional provision for a national referendum in India",
+      "Goa Opinion Poll (1967) is the only formal opinion poll in Indian democratic history",
+      "The Constitution can be amended by Parliament — no public referendum required",
+      "Referendums for accession of princely states were consultative, not binding by law",
     ],
   },
 ];
@@ -106,9 +106,9 @@ export default function Types() {
   return (
     <div className="container mx-auto px-4 py-16 max-w-4xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">Types of Elections</h1>
+        <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">Types of Indian Elections</h1>
         <p className="text-xl text-muted-foreground mb-16 max-w-2xl">
-          Elections happen at every level of government, on different schedules, and with different rules. Here's what each type means.
+          India holds elections at multiple levels — from Gram Panchayat to Parliament. Each type has its own rules, schedule, and significance.
         </p>
       </motion.div>
 

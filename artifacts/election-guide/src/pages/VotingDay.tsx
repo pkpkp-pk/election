@@ -2,66 +2,80 @@ import { motion } from "framer-motion";
 import { AlertCircle, CheckCircle2, ShieldCheck } from "lucide-react";
 
 const whatToBring = [
-  { item: "Photo ID", note: "Requirements vary by state. Check your state's specific ID law before going." },
-  { item: "Your voter registration card", note: "Helpful but not always required. Your name on the rolls is what matters." },
-  { item: "Sample ballot (optional)", note: "Review it in advance so you're prepared for local races and ballot measures." },
-  { item: "A pen (optional)", note: "Some polling places have limited supplies. A black or blue ballpoint is safest." },
+  { item: "EPIC Card (Voter ID Card)", note: "Your primary identity document. The photo and EPIC number on the card must match the electoral roll." },
+  { item: "Alternative Photo ID (if EPIC is unavailable)", note: "Aadhaar card, passport, driving licence, PAN card, MNREGA job card, passbook with photo from bank/post office, or any document listed by ECI." },
+  { item: "Your Booth / Polling Station Number", note: "Find your booth number and address in advance at voters.eci.gov.in or the Voter Helpline App (1950)." },
+  { item: "Your serial number in the electoral roll", note: "You can find your serial number on the Voter Service Portal. Knowing it speeds up check-in at the booth." },
 ];
 
 const steps = [
   {
     step: "01",
-    title: "Find Your Polling Place",
+    title: "Find Your Polling Booth",
     description:
-      "Your polling place is assigned based on your registered address. Look it up in advance at vote.gov or your state election website. Polling places can change between elections, so always double-check.",
+      "Your polling station is assigned based on your registered address. Look it up at voters.eci.gov.in or call Voter Helpline 1950. Booths are typically located in schools, community halls, or government buildings. Each booth covers up to 1,500 voters.",
   },
   {
     step: "02",
-    title: "Check In at the Front Desk",
+    title: "Join the Queue and Wait",
     description:
-      "Poll workers will look up your name in the voter rolls and verify your identity. In states with strict voter ID laws, you'll need to present an approved form of photo ID. In others, a signature is sufficient.",
+      "Arrive at your booth during polling hours (typically 7 AM to 6 PM). Polling stations have separate queues for general voters, women, senior citizens, and persons with disabilities (PwD). PwD voters and senior citizens (85+) may be given priority access or can apply for home voting.",
   },
   {
     step: "03",
-    title: "Receive Your Ballot",
+    title: "Identity Check by Polling Officer",
     description:
-      "Once checked in, you'll receive a ballot. In some jurisdictions this is a paper ballot; others use electronic voting machines. A poll worker will direct you to a private voting booth.",
+      "At the first table, a polling officer verifies your name in the electoral roll using your serial number or EPIC number. They will check your photo ID. Your name, EPIC number, and photograph must match the roll. If your name is in the roll, you are allowed to proceed.",
   },
   {
     step: "04",
-    title: "Mark Your Choices",
+    title: "Finger Inking",
     description:
-      "Read every race and ballot measure carefully. Follow the instructions for how to mark your choices — fill in bubbles completely, or use the machine's touchscreen. Take your time; there is no rush.",
+      "A polling officer applies indelible ink to the index finger of your left hand. This ink lasts for days and proves you have voted — preventing double voting. Once inked, you sign or put your thumb impression in the register against your entry.",
   },
   {
     step: "05",
-    title: "Review and Submit",
+    title: "Receive Your Voter Slip",
     description:
-      "Before submitting, review your ballot for any unintended marks. If you make a mistake on a paper ballot, you can ask for a new one (called 'spoiling' your ballot). Once submitted, your vote is final.",
+      "The Presiding Officer or polling officer hands you a ballot slip confirming your identity has been verified. You take this to the next officer who controls access to the EVM.",
   },
   {
     step: "06",
-    title: "Receive Your 'I Voted' Sticker",
+    title: "Cast Your Vote on the EVM",
     description:
-      "After submitting, you'll typically receive a sticker. More importantly, your participation in democracy is recorded. You can verify your vote was counted on most state election websites in the days after Election Day.",
+      "Inside the voting compartment, you will see the Ballot Unit of the EVM. It lists all candidates by name, symbol, and party (or 'NOTA' — None of the Above) with corresponding blue buttons. Press the button next to your chosen candidate. A beep confirms your vote.",
+  },
+  {
+    step: "07",
+    title: "Verify Your Vote on VVPAT",
+    description:
+      "After pressing the EVM button, the VVPAT (Voter Verifiable Paper Audit Trail) machine prints a paper slip showing the candidate's name, symbol, and serial number. This slip is visible for 7 seconds through a transparent window, then drops into a sealed compartment. It is your proof that the vote was recorded correctly.",
+  },
+  {
+    step: "08",
+    title: "Leave the Booth",
+    description:
+      "After voting, leave the voting compartment. Do not take any photographs inside. Exit the polling station premises and do not loiter, as campaigning near booths is prohibited within 200 metres (the 'prohibited zone').",
   },
 ];
 
 const rights = [
-  "You have the right to vote if you are in line when polls close — stay in line.",
-  "You have the right to cast a provisional ballot if your name is not on the rolls.",
-  "You have the right to assistance in the voting booth if you have a disability.",
-  "You have the right to vote free from intimidation, coercion, or harassment.",
-  "You have the right to vote in private — no one can see how you vote.",
-  "If you make an error on your ballot, you have the right to request a new one.",
+  "You have the right to vote if you are in the queue when the poll closes — stay in line.",
+  "You have the right to cast a Tender Vote if someone has already voted in your name.",
+  "You have the right to vote for 'NOTA' (None of the Above) if you find all candidates unsuitable.",
+  "You have the right to assistance if you are a person with a disability (PwD).",
+  "You have the right to vote in secret — no one can compel you to reveal your vote.",
+  "If your name is on the electoral roll, no one can deny you the right to vote.",
+  "You have the right to demand that the Presiding Officer demonstrate the EVM before voting begins (mock polling).",
+  "Women voters may request a female polling officer for assistance.",
 ];
 
 const issues = [
-  { problem: "Your name isn't on the voter rolls", solution: "Request a provisional ballot. Your vote will be counted once election officials verify your registration." },
-  { problem: "Your address is wrong in the system", solution: "In many states you can update your address at the polls. Ask for a provisional ballot to be safe." },
-  { problem: "You're told you already voted", solution: "This is a serious error. Request a provisional ballot and contact your state election authority immediately." },
-  { problem: "You're being harassed or intimidated", solution: "You have the right to a safe voting experience. Alert poll workers or call the Election Protection hotline: 1-866-OUR-VOTE." },
-  { problem: "The voting machine malfunctions", solution: "Alert a poll worker immediately. You are entitled to vote — they will provide an alternative method." },
+  { problem: "Your name is not found in the electoral roll", solution: "Ask the Presiding Officer to check using your EPIC number. If not found, you can cast a Tender Vote, which is kept separate and may be counted if found valid after investigation." },
+  { problem: "Someone has already voted in your name", solution: "Report to the Presiding Officer immediately. You will be allowed to cast a Tender Vote. This is a serious electoral offence and will be investigated." },
+  { problem: "The EVM appears faulty or does not beep", solution: "Inform the Presiding Officer immediately. Do not try to fix it yourself. A reserve EVM will be deployed and the issue documented." },
+  { problem: "You are being pressured or threatened at or near the booth", solution: "Report immediately to the Presiding Officer or police on duty. You can also call the ECI's Voter Helpline 1950 or the CVIGIL app to report violations with geotagged evidence." },
+  { problem: "You have a disability and need assistance", solution: "You can bring one companion of your choice into the voting compartment to assist you. Companion must be 18+ and not a candidate. PwD voters also have access to ramps, wheelchairs, and Braille ballot sheets at the booth." },
 ];
 
 export default function VotingDay() {
@@ -70,7 +84,7 @@ export default function VotingDay() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">Voting Day Guide</h1>
         <p className="text-xl text-muted-foreground mb-16 max-w-2xl">
-          What to expect when you walk into the polling place — from check-in to submission, and everything in between.
+          Everything you need to know before walking into your polling booth — from what to bring, to casting your vote on the EVM and VVPAT.
         </p>
       </motion.div>
 
@@ -97,14 +111,14 @@ export default function VotingDay() {
       </section>
 
       <section className="mb-16">
-        <h2 className="font-serif text-3xl font-bold mb-8">Step-by-Step: Voting in Person</h2>
-        <div className="space-y-6">
+        <h2 className="font-serif text-3xl font-bold mb-8">Step-by-Step: Voting at Your Booth</h2>
+        <div className="space-y-5">
           {steps.map((step, i) => (
             <motion.div
               key={step.step}
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.07 }}
+              transition={{ delay: i * 0.06 }}
               viewport={{ once: true }}
               className="flex gap-6 bg-card border rounded-2xl p-6"
             >
@@ -164,6 +178,9 @@ export default function VotingDay() {
             </motion.div>
           ))}
         </div>
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Voter Helpline: <strong className="text-foreground">1950</strong> — Available in all states | Report violations on the <strong className="text-foreground">cVIGIL app</strong>
+        </p>
       </section>
     </div>
   );
