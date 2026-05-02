@@ -110,21 +110,37 @@ function loadState(): ScraperState | null {
 
 /**
  * Parse an individual candidate page.
- * All key fields are in plain HTML on these pages.
+ * Only accepts candidates that:
+ *   1. Have the Lok Sabha 2024 election tag (w3-khaki panel — not just breadcrumb nav)
+ *   2. Have a candidate photograph (alt='profile image' with images_candidate/LokSabha2024/)
  */
 function parseCandidatePage(html: string, mynetaId: number): CandidateRow | null {
   if (!html || html.includes("Page Not Found")) return null;
 
+  // Reject CAPTCHA pages
+  if (html.includes("imagebuilder.php")) return null;
+
+  // Must have the Lok Sabha 2024 election tag panel (w3-khaki), not just the breadcrumb
+  if (!html.includes("w3-khaki") || !html.includes("Lok Sabha 2024")) return null;
+
+  // Must have a candidate photograph (the profile image from ECI affidavit)
+  const photoUrl =
+    html.match(
+      /src=(https?:\/\/(?:www\.)?myneta\.info\/images_candidate\/LokSabha2024\/[^\s"'<>]+)[^>]*alt='profile image'/,
+    )?.[1] ??
+    html.match(
+      /alt='profile image'[^>]*src=(https?:\/\/(?:www\.)?myneta\.info\/images_candidate\/LokSabha2024\/[^\s"'<>]+)/,
+    )?.[1] ?? null;
+
+  if (!photoUrl) return null; // skip candidates with no affidavit photo
+
   const name = html.match(/<h2>([^<(]+)/)?.[1]?.trim();
   if (!name || name.trim().length < 2) return null;
 
-  // Constituency and state: <h5>CONSTITUENCY (STATE) Lok Sabha 2024</h5>
+  // Constituency and state: <h5>CONSTITUENCY (STATE)</h5>
   const h5 = html.match(/<h5>\s*([^(<\n]+?)\s*\(([^)]+)\)/);
   const constituency = h5?.[1]?.trim().toUpperCase() ?? "";
   const state = h5?.[2]?.trim().toUpperCase() ?? "";
-
-  // Must be a Lok Sabha 2024 candidate
-  if (!html.includes("LokSabha2024") && !html.includes("Lok Sabha 2024")) return null;
 
   const isWinner = /\(Winner\)/i.test(html);
   const party = html.match(/<b>Party:<\/b>\s*([^\n<]+)/)?.[1]?.trim() ?? "";
@@ -140,12 +156,6 @@ function parseCandidatePage(html: string, mynetaId: number): CandidateRow | null
     /Number of Criminal Cases:\s*<span[^>]*>\s*(\d+)\s*<\/span>/,
   )?.[1];
   const criminalCases = crimStr != null ? parseInt(crimStr) : null;
-
-  // Photo URL: src=https://myneta.info/images_candidate/LokSabha2024/...
-  const photoUrl =
-    html.match(
-      /src=(https?:\/\/(?:www\.)?myneta\.info\/images_candidate\/LokSabha2024\/[^\s"'<>]+)/,
-    )?.[1] ?? null;
 
   if (!constituency || !party) return null;
 
