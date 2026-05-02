@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout/Layout";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 import NotFound from "@/pages/not-found";
 
 import Home from "@/pages/Home";
