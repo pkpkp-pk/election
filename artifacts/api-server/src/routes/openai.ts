@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
+import { eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { conversations, messages, insertConversationSchema, insertMessageSchema } from "@workspace/db/schema";
+import { conversations, messages, insertConversationSchema, insertMessageSchema, candidates } from "@workspace/db/schema";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { CreateOpenaiConversationBody, SendOpenaiMessageBody, GetOpenaiConversationParams, DeleteOpenaiConversationParams, SendOpenaiMessageParams, ListOpenaiMessagesParams } from "@workspace/api-zod";
 
@@ -217,66 +217,157 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
   }
 });
 
-const CANDIDATE_SYSTEM_PROMPT = `You are an expert on Indian politics and elections. When given the name of an Indian politician or candidate, return ONLY a valid JSON object in exactly this format (no markdown, no extra text):
+// ─── Candidate Search: DB-first, AI supplement ───────────────────────────────
+
+const CANDIDATE_BIO_PROMPT = `You are an expert on Indian politics. Given a candidate's real affidavit data (name, party, constituency, criminal cases, assets), generate biographical details in ONLY this JSON format (no markdown):
 
 {
-  "name": "Full official name",
-  "aliases": ["Common name", "Nickname if any"],
+  "aliases": ["Common nickname if any"],
   "born": "Birth year or approximate",
-  "gender": "Male/Female/Other",
-  "current_party": "Current party name or 'None/Independent'",
-  "current_party_short": "Short abbreviation like BJP, INC, AAP etc",
   "career_start": "Year political career began",
-  "career_years": 25,
+  "career_years": 10,
   "status": "Active/Retired/Deceased",
-  "current_position": "Current designation if any, e.g. 'Member of Parliament, Varanasi'",
-  "constituencies": [
-    { "name": "Constituency name", "state": "State", "from": "Year", "to": "Year or present", "type": "Lok Sabha/Rajya Sabha/MLA" }
+  "current_position": "Current designation if any",
+  "constituencies_history": [
+    { "name": "Constituency", "state": "State", "from": "Year", "to": "Year or present", "type": "Lok Sabha/Rajya Sabha/MLA" }
   ],
-  "parties": [
-    { "party": "Party name", "short": "Abbreviation", "from": "Year", "to": "Year or present", "role": "Role in party if notable" }
+  "parties_history": [
+    { "party": "Party name", "short": "Abbreviation", "from": "Year", "to": "Year or present" }
   ],
-  "criminal_cases": {
-    "count": 0,
-    "severity": "None/Minor/Serious/Heinous",
-    "details": ["Case description if any"],
-    "source": "ADR (Association for Democratic Reforms) data",
-    "note": "Data based on self-declared affidavits filed during elections"
-  },
   "popularity": {
-    "score": 7,
+    "score": 5,
     "level": "National/State/Regional/Local",
-    "description": "2-3 sentences on how well-known they are and why"
+    "description": "2-3 sentences on recognition and influence"
   },
   "major_works": [
-    { "title": "Work/achievement title", "description": "Brief description" }
+    { "title": "Achievement", "description": "Brief description" }
   ],
   "brief": "2-3 sentence biographical summary",
-  "disclaimer": "This profile is AI-generated based on publicly available information. It may contain inaccuracies. Always verify with official sources like ECI, ADR, or the candidate's official affidavit."
+  "disclaimer": "Affidavit data (criminal cases, assets) is from ECI via ADR/myneta.info and is self-declared by the candidate. Biographical details are AI-generated and may be inaccurate."
 }
 
 Rules:
-- criminal_cases.count must be a number (0 if none known)
 - career_years must be a number
 - popularity.score must be 1-10
-- parties array must be chronological oldest first
-- major_works should have 3-5 items
-- constituencies should be chronological
-- If the person is not a known Indian politician, set name to the input, brief to "No verified information found for this person as an Indian politician.", and all arrays to []
-- Never fabricate specific criminal case details — if unsure, set count to 0 and add a note
-- Be factually accurate about well-known politicians`;
+- major_works: 2-5 items
+- If this is an obscure/unknown candidate, set brief to a short neutral statement and keep arrays minimal
+- Never fabricate specific criminal case details (real data is provided separately)`;
 
+// New endpoint: search candidates in DB, return real data + AI bio
+router.post("/openai/candidate-search", async (req, res) => {
+  const query = req.body?.query;
+  if (!query || typeof query !== "string" || query.trim().length === 0) {
+    res.status(400).json({ error: "Missing search query" });
+    return;
+  }
+
+  const q = query.trim();
+
+  try {
+    // Search DB: name ILIKE, constituency ILIKE, party (full or short) ILIKE, or state ILIKE
+    const dbResults = await db
+      .select()
+      .from(candidates)
+      .where(
+        or(
+          ilike(candidates.name, `%${q}%`),
+          ilike(candidates.constituency, `%${q}%`),
+          ilike(candidates.party, `%${q}%`),
+          ilike(candidates.partyShort, `%${q}%`),
+          ilike(candidates.state, `%${q}%`)
+        )
+      )
+      .orderBy(sql`CASE WHEN LOWER(name) LIKE LOWER(${`${q}%`}) THEN 0 ELSE 1 END`, candidates.name)
+      .limit(20);
+
+    res.json({
+      query: q,
+      total: dbResults.length,
+      candidates: dbResults,
+      source: "ADR/myneta.info via ECI affidavits",
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to search candidates" });
+  }
+});
+
+// Endpoint: get AI bio for a specific candidate (by myneta_id or name)
+router.post("/openai/candidate-bio", async (req, res) => {
+  const { mynetaId, name, party, constituency, criminalCases, totalAssetsText } = req.body ?? {};
+
+  if (!name || typeof name !== "string") {
+    res.status(400).json({ error: "Missing candidate name" });
+    return;
+  }
+
+  try {
+    const context = `Candidate: ${name}
+Party: ${party ?? "Unknown"}
+Constituency: ${constituency ?? "Unknown"}
+Criminal cases declared: ${criminalCases ?? 0}
+Total assets declared: ${totalAssetsText ?? "Not available"}
+Source: ECI affidavit (Lok Sabha 2024)`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: CANDIDATE_BIO_PROMPT },
+        { role: "user", content: `Generate biographical details for this candidate:\n\n${context}` },
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    let bio: unknown;
+    try {
+      bio = JSON.parse(raw);
+    } catch {
+      bio = { brief: "Biographical information not available.", parties_history: [], constituencies_history: [], major_works: [], popularity: { score: 3, description: "No data" } };
+    }
+
+    res.json({ bio, candidateName: name });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch candidate bio" });
+  }
+});
+
+// Legacy endpoint (kept for backward compat, uses AI only)
 router.post("/openai/candidate", async (req, res) => {
   const name = req.body?.name;
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     res.status(400).json({ error: "Missing candidate name" });
     return;
   }
+
+  const LEGACY_PROMPT = `You are an expert on Indian politics and elections. When given the name of an Indian politician or candidate, return ONLY a valid JSON object in exactly this format (no markdown, no extra text):
+
+{
+  "name": "Full official name",
+  "aliases": ["Common name"],
+  "born": "Birth year",
+  "gender": "Male/Female/Other",
+  "current_party": "Current party name",
+  "current_party_short": "Abbreviation",
+  "career_start": "Year",
+  "career_years": 10,
+  "status": "Active/Retired/Deceased",
+  "current_position": "Current designation",
+  "constituencies": [{ "name": "Constituency", "state": "State", "from": "Year", "to": "Year", "type": "Lok Sabha" }],
+  "parties": [{ "party": "Party", "short": "Short", "from": "Year", "to": "Year", "role": "Role" }],
+  "criminal_cases": { "count": 0, "severity": "None", "details": [], "source": "ADR", "note": "Self-declared affidavit" },
+  "popularity": { "score": 5, "level": "National", "description": "Description" },
+  "major_works": [{ "title": "Work", "description": "Description" }],
+  "brief": "2-3 sentence summary",
+  "disclaimer": "AI-generated profile. Verify with official sources."
+}`;
+
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: CANDIDATE_SYSTEM_PROMPT },
+        { role: "system", content: LEGACY_PROMPT },
         { role: "user", content: `Get profile for Indian politician: ${name.trim()}` },
       ],
       response_format: { type: "json_object" },
@@ -325,4 +416,3 @@ router.post("/openai/ask", async (req, res) => {
 });
 
 export default router;
-
