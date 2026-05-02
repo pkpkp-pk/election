@@ -7,6 +7,29 @@ import { CreateOpenaiConversationBody, SendOpenaiMessageBody, GetOpenaiConversat
 
 const router = Router();
 
+const STRUCTURED_SYSTEM_PROMPT = `You are Chunav Guide, an expert on Indian elections. When given a question, respond with ONLY a valid JSON object in exactly this format (no markdown, no extra text):
+
+{
+  "answer": "A direct, factual 2-3 sentence answer to the question. Be concise and informative.",
+  "related": [
+    {
+      "keyword": "1-3 word label",
+      "question": "A related question the user might want to know?",
+      "brief": "One clear sentence answer to this related question.",
+      "detailed": "A thorough 3-5 sentence explanation with specifics, facts, and context about this related topic."
+    }
+  ]
+}
+
+Rules:
+- "answer" must be direct and factual, 2-3 sentences max
+- "related" must contain exactly 5 objects covering genuinely related subtopics
+- "keyword" must be 1-3 words, like a tag (e.g. "EVM", "Voter ID", "Model Code", "Lok Sabha", "VVPAT")
+- "brief" is one sentence only
+- "detailed" is 3-5 sentences with rich factual detail
+- All content must be about Indian elections, democracy, and civic processes
+- Respond in English unless the question is in Hindi`;
+
 const SYSTEM_PROMPT = `You are Chunav Guide, a helpful assistant for Indian elections. You answer questions about:
 - How Indian elections work (Lok Sabha, Rajya Sabha, Vidhan Sabha, Vidhan Parishad)
 - Voter registration (Form 6, Form 7, Form 8, Form 8A, EPIC/Voter ID card)
@@ -194,4 +217,34 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
   }
 });
 
+router.post("/openai/ask", async (req, res) => {
+  const question = req.body?.question;
+  if (!question || typeof question !== "string" || question.trim().length === 0) {
+    res.status(400).json({ error: "Missing question" });
+    return;
+  }
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: STRUCTURED_SYSTEM_PROMPT },
+        { role: "user", content: question.trim() },
+      ],
+      response_format: { type: "json_object" },
+    });
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = { answer: raw, related: [] };
+    }
+    res.json(parsed);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to process question" });
+  }
+});
+
 export default router;
+

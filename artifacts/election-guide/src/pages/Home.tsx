@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowRight, BookOpen, CheckSquare, Clock, HelpCircle, Layers, MapPin, Vote, Shield, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AskChunav } from "@/components/chat/AskChunav";
 
 const sections = [
   { href: "/how-it-works", label: "How Elections Work", icon: Layers, desc: "From nomination to results — the complete Indian election process explained.", color: "#1a56db" },
@@ -29,36 +30,22 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center">
       {/* HERO */}
-      <section className="w-full text-white py-28 md:py-36 relative overflow-hidden" style={{ background: "hsl(213 81% 14%)" }}>
-        {/* Decorative Ashoka Chakra watermark */}
+      <section className="w-full text-white py-24 md:py-32 relative overflow-hidden" style={{ background: "hsl(213 81% 10%)" }}>
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
-          <AshokaCycle size={520} className="opacity-[0.04] text-white" />
+          <AshokaCycle size={560} className="opacity-[0.04] text-white" />
         </div>
-
-        {/* Tricolor glow accents */}
         <div className="absolute top-0 left-0 w-full h-1 flex">
           <div className="flex-1" style={{ background: "#FF9933" }} />
           <div className="flex-1 bg-white/60" />
           <div className="flex-1" style={{ background: "#138808" }} />
         </div>
-        <div className="absolute bottom-0 left-0 w-full h-px opacity-20 flex">
-          <div className="flex-1" style={{ background: "#FF9933" }} />
-          <div className="flex-1 bg-white" />
-          <div className="flex-1" style={{ background: "#138808" }} />
-        </div>
-
-        {/* Saffron glow left, green glow right */}
         <div className="absolute left-0 top-0 bottom-0 w-1/3 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at left center, rgba(255,153,51,0.12) 0%, transparent 70%)" }} />
+          style={{ background: "radial-gradient(ellipse at left center, rgba(255,153,51,0.10) 0%, transparent 70%)" }} />
         <div className="absolute right-0 top-0 bottom-0 w-1/3 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at right center, rgba(19,136,8,0.10) 0%, transparent 70%)" }} />
+          style={{ background: "radial-gradient(ellipse at right center, rgba(19,136,8,0.08) 0%, transparent 70%)" }} />
 
         <div className="container mx-auto px-4 md:px-8 relative z-10 text-center max-w-4xl">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium mb-8 border border-white/20"
               style={{ background: "rgba(255,255,255,0.07)" }}>
               <AshokaCycle size={16} className="text-orange-300" />
@@ -66,16 +53,13 @@ export default function Home() {
               <span className="text-white/40 mx-1">·</span>
               <span className="text-white/70">Bharat Ka Chunav Guide</span>
             </div>
-
             <h1 className="font-serif text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight">
               India's Democracy,{" "}
               <span style={{ color: "#FF9933" }}>Explained.</span>
             </h1>
-
-            <p className="text-lg md:text-xl text-white/75 mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-white/70 mb-10 max-w-2xl mx-auto leading-relaxed">
               A clear, trustworthy companion to help every Indian citizen understand and participate in the world's largest democratic exercise.
             </p>
-
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/registration">
                 <Button size="lg" className="text-base px-8 py-6 rounded-full font-bold shadow-lg"
@@ -93,8 +77,11 @@ export default function Home() {
         </div>
       </section>
 
+      {/* AI CHAT — Main feature */}
+      <AskChunav />
+
       {/* STATS */}
-      <section className="py-16 w-full border-b" style={{ background: "hsl(213 81% 97%)" }}>
+      <section className="py-14 w-full border-b" style={{ background: "hsl(213 81% 97%)" }}>
         <div className="container mx-auto px-4 md:px-8 max-w-5xl">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((item, i) => (
@@ -131,9 +118,7 @@ export default function Home() {
             <div className="inline-flex items-center gap-2 text-xs uppercase tracking-widest font-semibold mb-3" style={{ color: "#FF9933" }}>
               <span>🇮🇳</span> Foundations of Indian Democracy
             </div>
-            <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground">
-              Your Vote, Your Voice
-            </h2>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground">Your Vote, Your Voice</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {values.map((v, i) => {
@@ -174,7 +159,6 @@ export default function Home() {
               Everything you need to know to participate in Indian democracy — clear and accessible.
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {sections.map((section, i) => {
               const Icon = section.icon;
@@ -188,15 +172,11 @@ export default function Home() {
                 >
                   <Link href={section.href}>
                     <div className="group h-full p-7 rounded-2xl border bg-white hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col relative overflow-hidden">
-                      <div
-                        className="absolute top-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        style={{ background: section.color }}
-                      />
-                      <div
-                        className="h-12 w-12 rounded-xl flex items-center justify-center mb-5 transition-all duration-300"
-                        style={{ background: `${section.color}14` }}
-                      >
-                        <Icon className="h-6 w-6 transition-colors" style={{ color: section.color }} />
+                      <div className="absolute top-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ background: section.color }} />
+                      <div className="h-12 w-12 rounded-xl flex items-center justify-center mb-5 transition-all duration-300"
+                        style={{ background: `${section.color}14` }}>
+                        <Icon className="h-6 w-6" style={{ color: section.color }} />
                       </div>
                       <h3 className="font-serif text-xl font-bold mb-2">{section.label}</h3>
                       <p className="text-muted-foreground flex-1 leading-relaxed text-sm">{section.desc}</p>
@@ -260,7 +240,7 @@ export default function Home() {
   );
 }
 
-function AshokaCycle({ size = 24, className = "", style = {} }: { size?: number; className?: string; style?: React.CSSProperties }) {
+function AshokaCycle({ size = 24, className = "" }: { size?: number; className?: string }) {
   const spokes = Array.from({ length: 24 }, (_, i) => {
     const angle = (i * 360) / 24;
     const rad = (angle * Math.PI) / 180;
@@ -275,9 +255,8 @@ function AshokaCycle({ size = 24, className = "", style = {} }: { size?: number;
       y2: cy + r * Math.sin(rad),
     };
   });
-
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={className} style={style} fill="none">
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className={className} fill="none">
       <circle cx={size / 2} cy={size / 2} r={size / 2 - 2} stroke="currentColor" strokeWidth="1.5" fill="none" />
       <circle cx={size / 2} cy={size / 2} r={size * 0.14} stroke="currentColor" strokeWidth="1.2" fill="none" />
       {spokes.map((s, i) => (
