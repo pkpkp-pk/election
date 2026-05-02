@@ -21,6 +21,10 @@ interface DbCandidate {
   electionType: string;
   criminalCases: number | null;
   education: string | null;
+  age: number | null;
+  profession: string | null;
+  parentage: string | null;
+  photoUrl: string | null;
   totalAssetsText: string | null;
   totalAssetsValue: number | null;
   liabilitiesText: string | null;
@@ -138,9 +142,13 @@ function useWikipediaPhoto(name: string): { photoUrl: string | null; loading: bo
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Skip Wikipedia fetch if name is empty (caller has a DB photo already)
+    if (!name.trim()) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     async function fetchPhoto() {
-      // Try the exact name first, then a few variants
       const variants = [
         name.trim().replace(/\s+/g, "_"),
         name.trim().replace(/\s+/g, "_") + "_(politician)",
@@ -156,7 +164,6 @@ function useWikipediaPhoto(name: string): { photoUrl: string | null; loading: bo
           const data = await res.json();
           const url: string | undefined = data?.thumbnail?.source;
           if (url && !cancelled) {
-            // Request a larger thumb: replace /100px- with /200px-
             setPhotoUrl(url.replace(/\/\d+px-/, "/200px-"));
             setLoading(false);
             return;
@@ -177,12 +184,18 @@ function useWikipediaPhoto(name: string): { photoUrl: string | null; loading: bo
 // ─── Candidate avatar (photo or party initials fallback) ─────────────────────
 
 function CandidateAvatar({
-  name, color, initials, size = 52,
-}: { name: string; color: string; initials: string; size?: number }) {
-  const { photoUrl, loading } = useWikipediaPhoto(name);
+  name, color, initials, size = 52, mynetaPhotoUrl,
+}: { name: string; color: string; initials: string; size?: number; mynetaPhotoUrl?: string | null }) {
   const dim = `${size}px`;
 
-  if (loading) {
+  // If we have a photo from the DB (myneta.info affidavit photo), use it directly.
+  // Otherwise fall back to Wikipedia.
+  const skip = Boolean(mynetaPhotoUrl);
+  const { photoUrl: wikiUrl, loading } = useWikipediaPhoto(skip ? "" : name);
+  const photoUrl = mynetaPhotoUrl ?? wikiUrl;
+  const isLoading = !skip && loading;
+
+  if (isLoading) {
     return (
       <div className="rounded-full bg-gray-100 animate-pulse flex-shrink-0" style={{ width: dim, height: dim }} />
     );
@@ -240,6 +253,9 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
           constituency: candidate.constituency,
           criminalCases: candidate.criminalCases,
           totalAssetsText: candidate.totalAssetsText,
+          age: candidate.age,
+          profession: candidate.profession,
+          parentage: candidate.parentage,
         }),
       });
       if (!res.ok) throw new Error("Failed");
@@ -271,7 +287,7 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
         <div className="flex items-start gap-4">
           {/* Candidate photo / party badge */}
           <div className="relative flex-shrink-0">
-            <CandidateAvatar name={candidate.name} color={color} initials={initials} size={52} />
+            <CandidateAvatar name={candidate.name} color={color} initials={initials} size={52} mynetaPhotoUrl={candidate.photoUrl} />
             {/* Party colour dot overlay */}
             <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center text-white"
               style={{ background: color, fontSize: "6px", fontWeight: 700 }}>
@@ -294,8 +310,19 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
                 <Briefcase className="h-3 w-3" />
                 {candidate.party}
               </span>
+              {candidate.age != null && (
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  Age {candidate.age}
+                </span>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
+              {candidate.profession && (
+                <span className="inline-flex items-center gap-1 text-xs bg-muted/60 px-2 py-0.5 rounded-full">
+                  <Briefcase className="h-3 w-3" /> {candidate.profession}
+                </span>
+              )}
               {candidate.education && (
                 <span className="inline-flex items-center gap-1 text-xs bg-muted/60 px-2 py-0.5 rounded-full">
                   <GraduationCap className="h-3 w-3" /> {candidate.education}
@@ -383,6 +410,30 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
                     <div className="text-xs text-muted-foreground">Liabilities</div>
                   </div>
                 </div>
+
+                {/* Personal details row */}
+                {(candidate.age != null || candidate.profession || candidate.parentage) && (
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {candidate.age != null && (
+                      <div className="bg-white rounded-xl border p-3 flex-1 min-w-[100px]">
+                        <div className="text-xs text-muted-foreground mb-0.5">Age</div>
+                        <div className="font-semibold text-sm">{candidate.age} yrs</div>
+                      </div>
+                    )}
+                    {candidate.profession && (
+                      <div className="bg-white rounded-xl border p-3 flex-1 min-w-[120px]">
+                        <div className="text-xs text-muted-foreground mb-0.5">Profession</div>
+                        <div className="font-semibold text-sm truncate">{candidate.profession}</div>
+                      </div>
+                    )}
+                    {candidate.parentage && (
+                      <div className="bg-white rounded-xl border p-3 flex-[2] min-w-[160px]">
+                        <div className="text-xs text-muted-foreground mb-0.5">Parentage</div>
+                        <div className="font-semibold text-sm truncate">{candidate.parentage}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {candidate.sourceUrl && (
                   <a href={candidate.sourceUrl} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-2">
@@ -604,7 +655,7 @@ export default function Candidates() {
               Search Indian Candidates
             </h1>
             <p className="text-white/50 text-sm md:text-base max-w-xl mx-auto">
-              Real affidavit data from ECI — criminal cases, assets, party affiliations — for 190+ top candidates, plus AI biographies for all others.
+              Real affidavit data from ECI — criminal cases, age, profession, party — for all 8,338 Lok Sabha 2024 candidates (database building in real-time).
             </p>
           </motion.div>
 
@@ -753,7 +804,7 @@ export default function Candidates() {
             <AshokaCycle size={52} className="mx-auto mb-4 opacity-10 text-primary" />
             <h3 className="font-serif text-lg font-bold text-foreground mb-2">Search Candidates</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              190+ major Lok Sabha 2024 candidates with real ECI affidavit data. Search by name, constituency, or party. AI biographies available for all.
+              All 8,338 Lok Sabha 2024 candidates with real ECI affidavit data — age, profession, criminal cases. Search by name, constituency, or party. AI biographies for all.
             </p>
             <div className="grid grid-cols-3 gap-3 text-center">
               {[

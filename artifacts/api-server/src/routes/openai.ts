@@ -294,7 +294,7 @@ router.post("/openai/candidate-search", async (req, res) => {
 
 // Endpoint: get AI bio for a specific candidate (by myneta_id or name)
 router.post("/openai/candidate-bio", async (req, res) => {
-  const { mynetaId, name, party, constituency, criminalCases, totalAssetsText } = req.body ?? {};
+  const { mynetaId, name, party, constituency, criminalCases, totalAssetsText, age, profession, parentage } = req.body ?? {};
 
   if (!name || typeof name !== "string") {
     res.status(400).json({ error: "Missing candidate name" });
@@ -302,12 +302,18 @@ router.post("/openai/candidate-bio", async (req, res) => {
   }
 
   try {
-    const context = `Candidate: ${name}
-Party: ${party ?? "Unknown"}
-Constituency: ${constituency ?? "Unknown"}
-Criminal cases declared: ${criminalCases ?? 0}
-Total assets declared: ${totalAssetsText ?? "Not available"}
-Source: ECI affidavit (Lok Sabha 2024)`;
+    const contextLines = [
+      `Candidate: ${name}`,
+      `Party: ${party ?? "Unknown"}`,
+      `Constituency: ${constituency ?? "Unknown"}`,
+      age != null ? `Age: ${age}` : null,
+      profession ? `Profession: ${profession}` : null,
+      parentage ? `Parentage: ${parentage}` : null,
+      `Criminal cases declared: ${criminalCases ?? "Not available"}`,
+      `Total assets declared: ${totalAssetsText ?? "Not available"}`,
+      `Source: ECI affidavit (Lok Sabha 2024)`,
+    ].filter(Boolean);
+    const context = contextLines.join("\n");
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
