@@ -499,7 +499,8 @@ router.post("/openai/candidate-bio", async (req, res) => {
       if (cached) {
         let bio: unknown;
         try { bio = JSON.parse(cached.bioJson); } catch { bio = {}; }
-        return res.json({ bio, candidateName: name, cached: true });
+        res.json({ bio, candidateName: name, cached: true });
+        return;
       }
     }
 

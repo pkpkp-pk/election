@@ -1,19 +1,30 @@
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey =
-  process.env.AI_INTEGRATIONS_GEMINI_API_KEY ?? process.env.GEMINI_API_KEY;
+let _client: GoogleGenAI | null = null;
 
-const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+function getClient(): GoogleGenAI {
+  if (_client) return _client;
 
-if (!apiKey) {
-  throw new Error(
-    "A Gemini API key must be set. Use AI_INTEGRATIONS_GEMINI_API_KEY (Replit) or GEMINI_API_KEY (Vercel/other).",
-  );
+  const apiKey =
+    process.env.AI_INTEGRATIONS_GEMINI_API_KEY ?? process.env.GEMINI_API_KEY;
+  const baseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+
+  if (!apiKey) {
+    throw new Error(
+      "A Gemini API key must be set. Use AI_INTEGRATIONS_GEMINI_API_KEY (Replit) or GEMINI_API_KEY (Vercel/other).",
+    );
+  }
+
+  _client = new GoogleGenAI({
+    apiKey,
+    ...(baseUrl ? { httpOptions: { apiVersion: "", baseUrl } } : {}),
+  });
+
+  return _client;
 }
 
-export const ai = new GoogleGenAI({
-  apiKey,
-  ...(baseUrl
-    ? { httpOptions: { apiVersion: "", baseUrl } }
-    : {}),
+export const ai = new Proxy({} as GoogleGenAI, {
+  get(_target, prop: string | symbol) {
+    return (getClient() as unknown as Record<string | symbol, unknown>)[prop];
+  },
 });
