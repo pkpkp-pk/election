@@ -1,9 +1,18 @@
 import { Router } from "express";
-import { eq, ilike, or, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import { createClient } from "@supabase/supabase-js";
 import { db } from "@workspace/db";
-import { conversations, messages, insertConversationSchema, insertMessageSchema, candidates, candidateBios } from "@workspace/db/schema";
+import { conversations, messages, insertConversationSchema, insertMessageSchema, candidateBios } from "@workspace/db/schema";
 import { ai } from "@workspace/integrations-gemini-ai";
 import { CreateOpenaiConversationBody, SendOpenaiMessageBody, GetOpenaiConversationParams, DeleteOpenaiConversationParams, SendOpenaiMessageParams, ListOpenaiMessagesParams } from "@workspace/api-zod";
+
+// ─── Supabase client (for candidates table) ───────────────────────────────────
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
+
+const supabase = supabaseUrl && supabaseKey
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 
 const router = Router();
 
@@ -316,21 +325,80 @@ Rules:
 
 // ─── Candidate Search (GET + POST) ───────────────────────────────────────────
 
+type SupabaseCandidate = {
+  id: number;
+  myneta_id: number | null;
+  name: string;
+  constituency: string;
+  state: string | null;
+  party: string;
+  party_short: string | null;
+  election_year: number;
+  election_type: string;
+  criminal_cases: number | null;
+  education: string | null;
+  age: number | null;
+  profession: string | null;
+  parentage: string | null;
+  photo_url: string | null;
+  total_assets_text: string | null;
+  total_assets_value: number | null;
+  liabilities_text: string | null;
+  liabilities_value: number | null;
+  is_winner: boolean | null;
+  source_url: string | null;
+  created_at: string;
+};
+
+function mapCandidate(row: SupabaseCandidate) {
+  return {
+    id: row.id,
+    mynetaId: row.myneta_id,
+    name: row.name,
+    constituency: row.constituency,
+    state: row.state,
+    party: row.party,
+    partyShort: row.party_short,
+    electionYear: row.election_year,
+    electionType: row.election_type,
+    criminalCases: row.criminal_cases,
+    education: row.education,
+    age: row.age,
+    profession: row.profession,
+    parentage: row.parentage,
+    photoUrl: row.photo_url,
+    totalAssetsText: row.total_assets_text,
+    totalAssetsValue: row.total_assets_value,
+    liabilitiesText: row.liabilities_text,
+    liabilitiesValue: row.liabilities_value,
+    isWinner: row.is_winner,
+    sourceUrl: row.source_url,
+    createdAt: row.created_at,
+  };
+}
+
 async function searchCandidates(q: string) {
-  return db
-    .select()
-    .from(candidates)
-    .where(
-      or(
-        ilike(candidates.name, `%${q}%`),
-        ilike(candidates.constituency, `%${q}%`),
-        ilike(candidates.party, `%${q}%`),
-        ilike(candidates.partyShort, `%${q}%`),
-        ilike(candidates.state, `%${q}%`)
-      )
+  if (!supabase) {
+    throw new Error("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY).");
+  }
+  const { data, error } = await supabase
+    .from("candidates")
+    .select("*")
+    .or(
+      `name.ilike.%${q}%,constituency.ilike.%${q}%,party.ilike.%${q}%,party_short.ilike.%${q}%,state.ilike.%${q}%`
     )
-    .orderBy(sql`CASE WHEN LOWER(name) LIKE LOWER(${`${q}%`}) THEN 0 ELSE 1 END`, candidates.name)
+    .order("name")
     .limit(20);
+
+  if (error) throw error;
+  const rows = (data ?? []) as SupabaseCandidate[];
+  return rows
+    .sort((a, b) => {
+      const aStarts = a.name.toLowerCase().startsWith(q.toLowerCase()) ? 0 : 1;
+      const bStarts = b.name.toLowerCase().startsWith(q.toLowerCase()) ? 0 : 1;
+      return aStarts - bStarts || a.name.localeCompare(b.name);
+    })
+    .map(mapCandidate);
 }
 
 // GET /api/openai/candidate-search?q=Modi

@@ -11,10 +11,12 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
+- **Database**: PostgreSQL + Drizzle ORM (conversations/messages/bios); Supabase JS client (candidates)
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **AI**: Gemini (`gemini-2.5-flash`) via `@workspace/integrations-gemini-ai`
+- **Deployment**: Vercel-compatible (see `vercel.json`)
 
 ## Key Commands
 
@@ -23,7 +25,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
-- `pnpm --filter @workspace/scripts run scrape-myneta` — scrape ALL ~8,338 Lok Sabha 2024 candidates from myneta.info (sequential, 1.5s delay, resumes from /tmp/scraper_state_v2.json)
+- `pnpm --filter @workspace/scripts run scrape-myneta` — scrape ALL ~8,338 Lok Sabha 2024 candidates from myneta.info
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
 
@@ -35,38 +37,51 @@ The main Chunav Guide web app. Pages: Candidates, How Elections Work, Voter Regi
 ### api-server (Express 5, path: `/api`)
 REST API with:
 - `/api/openai/ask` — structured AI Q&A about Indian elections
-- `/api/openai/candidate-search` — DB-first candidate search (name, constituency, party/partyShort, state)
-- `/api/openai/candidate-bio` — AI biographical supplement for a specific candidate (uses age, profession, parentage from DB)
+- `/api/openai/candidate-search` — Supabase candidate search (name, constituency, party, state)
+- `/api/openai/candidate-bio` — AI biographical supplement (Gemini, cached in DB)
 - `/api/openai/conversations` — multi-turn chat conversations
-- `/api/openai/candidate` — legacy AI-only profile endpoint (kept for backward compat)
+- `/api/openai/candidate` — legacy AI-only profile endpoint
 
 ## Database
 
-**candidates** table (`lib/db/src/schema/candidates.ts`):
+### Candidates (Supabase — `candidates` table)
+Queried via `@supabase/supabase-js`. Snake_case columns mapped to camelCase in `mapCandidate()`.
+Requires `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (or `SUPABASE_ANON_KEY`) env vars.
 
-Schema columns:
-- id, mynetaId, name, constituency, state, party, partyShort
-- electionYear, electionType
-- criminalCases, education, age, profession, parentage, photoUrl
-- totalAssetsText, totalAssetsValue, liabilitiesText, liabilitiesValue
-- isWinner, sourceUrl, createdAt
+### Other tables (Drizzle ORM — PostgreSQL via `DATABASE_URL`)
+- **conversations** / **messages** — chat history
+- **candidate_bios** — cached Gemini-generated bios
 
-**Data source**: ADR/myneta.info (public ECI affidavit data, Lok Sabha 2024)
+For Vercel, `DATABASE_URL` should be the Supabase Transaction mode pooler connection string.
 
-**Collection strategy**: `scripts/src/scrape-myneta.ts` scans candidate IDs 1–9750 sequentially
-- Each individual candidate page has name, party, constituency, state, winner, criminal cases, age, profession, parentage, and photo URL in plain HTML
-- Sequential scrape with 1.5s polite delay; resumes from `/tmp/scraper_state_v2.json`
-- Runs as the "Scraper: myneta.info" workflow (console outputType)
-- Upserts on `myneta_id` conflict using COALESCE to preserve richer existing data
+## AI Integration
 
-**ID range**: Lok Sabha 2024 candidate IDs span 1–~9700 (empirically: 9500 is valid, 9800 is "Page Not Found")
-**Total candidates**: ~8,338 (confirmed by myneta.info summary page)
+- **Replit**: uses `AI_INTEGRATIONS_GEMINI_API_KEY` + `AI_INTEGRATIONS_GEMINI_BASE_URL` (auto-set)
+- **Vercel**: uses `GEMINI_API_KEY` (direct Google API key from aistudio.google.com)
+- The client in `lib/integrations-gemini-ai/src/client.ts` supports both automatically
+
+## Vercel Deployment
+
+See `vercel.json` at project root and `.env.example` for all required env vars.
+
+- Build command: `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/election-guide run build`
+- Output directory: `artifacts/election-guide/dist/public`
+- API serverless function: `api/index.ts` (wraps Express app)
+- Routing: Vercel rewrites `/api/:path*` → `api/index.ts`
+
+**Required Vercel env vars:**
+- `DATABASE_URL` — Supabase Transaction mode pooler URL
+- `SUPABASE_URL` — Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key
+- `GEMINI_API_KEY` — Google AI Studio API key
+
+See `.env.example` for full details.
 
 ## Workflows
 
 - `artifacts/election-guide: web` — Vite dev server for the React frontend
 - `artifacts/api-server: API Server` — Express backend
-- `Scraper: myneta.info` — background scraper (runs until all IDs 1–9750 processed, ~4 hours)
+- `Scraper: myneta.info` — background scraper
 
 ## Frontend: Candidate Cards
 
@@ -75,4 +90,4 @@ The `Candidates.tsx` page shows:
 - Age, profession (shown in card header row)
 - Criminal cases badge (red/amber/green)
 - Expanded section: criminal cases, education, assets, liabilities, age, profession, parentage tiles
-- AI-generated biography (gpt-4o-mini, uses all available affidavit context)
+- AI-generated biography (Gemini 2.5 Flash, uses all available affidavit context)

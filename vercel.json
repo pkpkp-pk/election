@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "pnpm install --no-frozen-lockfile && pnpm --filter @workspace/election-guide run build",
+  "outputDirectory": "artifacts/election-guide/dist/public",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index" }
+  ]
+}
