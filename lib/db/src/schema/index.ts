@@ -20,3 +20,4 @@
 export * from "./conversations";
 export * from "./messages";
 export * from "./candidates";
+export * from "./candidate_bios";

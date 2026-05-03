@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { conversations, messages, insertConversationSchema, insertMessageSchema, candidates } from "@workspace/db/schema";
+import { conversations, messages, insertConversationSchema, insertMessageSchema, candidates, candidateBios } from "@workspace/db/schema";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { CreateOpenaiConversationBody, SendOpenaiMessageBody, GetOpenaiConversationParams, DeleteOpenaiConversationParams, SendOpenaiMessageParams, ListOpenaiMessagesParams } from "@workspace/api-zod";
 
@@ -356,7 +356,7 @@ router.post("/openai/candidate-search", async (req, res) => {
   }
 });
 
-// Endpoint: get AI bio for a specific candidate (by myneta_id or name)
+// Endpoint: get AI bio for a specific candidate — cache-first, generate with gpt-5.4 on miss
 router.post("/openai/candidate-bio", async (req, res) => {
   const { mynetaId, name, party, constituency, criminalCases, totalAssetsText, age, profession, parentage } = req.body ?? {};
 
@@ -366,6 +366,22 @@ router.post("/openai/candidate-bio", async (req, res) => {
   }
 
   try {
+    // ── 1. Cache lookup by myneta_id (skip if no ID provided) ───────────────
+    if (mynetaId != null) {
+      const [cached] = await db
+        .select()
+        .from(candidateBios)
+        .where(eq(candidateBios.mynetaId, Number(mynetaId)))
+        .limit(1);
+
+      if (cached) {
+        let bio: unknown;
+        try { bio = JSON.parse(cached.bioJson); } catch { bio = {}; }
+        return res.json({ bio, candidateName: name, cached: true });
+      }
+    }
+
+    // ── 2. Generate with gpt-5.4 ────────────────────────────────────────────
     const contextLines = [
       `Candidate: ${name}`,
       `Party: ${party ?? "Unknown"}`,
@@ -377,26 +393,36 @@ router.post("/openai/candidate-bio", async (req, res) => {
       `Total assets declared: ${totalAssetsText ?? "Not available"}`,
       `Source: ECI affidavit (Lok Sabha 2024)`,
     ].filter(Boolean);
-    const context = contextLines.join("\n");
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-5.4",
       messages: [
         { role: "system", content: CANDIDATE_BIO_PROMPT },
-        { role: "user", content: `Generate biographical details for this candidate:\n\n${context}` },
+        { role: "user", content: `Generate biographical details for this candidate:\n\n${contextLines.join("\n")}` },
       ],
       response_format: { type: "json_object" },
     });
 
     const raw = completion.choices[0]?.message?.content ?? "{}";
     let bio: unknown;
-    try {
-      bio = JSON.parse(raw);
-    } catch {
+    try { bio = JSON.parse(raw); } catch {
       bio = { brief: "Biographical information not available.", parties_history: [], constituencies_history: [], major_works: [], popularity: { score: 3, description: "No data" } };
     }
 
-    res.json({ bio, candidateName: name });
+    // ── 3. Persist to cache if we have a myneta_id ───────────────────────────
+    if (mynetaId != null) {
+      try {
+        await db.insert(candidateBios).values({
+          mynetaId: Number(mynetaId),
+          bioJson: JSON.stringify(bio),
+          modelVersion: "gpt-5.4",
+        }).onConflictDoNothing();
+      } catch (cacheErr) {
+        req.log.warn({ cacheErr }, "Bio cache write failed — returning result anyway");
+      }
+    }
+
+    res.json({ bio, candidateName: name, cached: false });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to fetch candidate bio" });
