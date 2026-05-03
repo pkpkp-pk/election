@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "wouter";
 
 // ── Stars ─────────────────────────────────────────────────────────────────────
 const STARS = Array.from({ length: 55 }, (_, i) => ({
@@ -9,10 +10,9 @@ const STARS = Array.from({ length: 55 }, (_, i) => ({
 }));
 
 // ── Wavy ring path ────────────────────────────────────────────────────────────
-// r(θ) = R + A·sin(N·θ)  — smooth scalloped circle like the reference image
 const N_BUMPS   = 12;
-const R_BASE    = 38;
-const AMPLITUDE = 11;
+const R_BASE    = 40;
+const AMPLITUDE = 12;
 const STROKE_W  = 7;
 const N_PTS     = 360;
 
@@ -33,20 +33,18 @@ function buildWavePath(): string {
 }
 const WAVE_PATH = buildWavePath();
 
-// ── Single color: purple, like the reference image ────────────────────────────
-const COLOR      = "#a855f7";
-const COLOR_HOV  = "#c084fc";
-const LABEL_CLR  = "#e9d5ff";
+const COLOR     = "#a855f7";
+const COLOR_HOV = "#c084fc";
+const LABEL_CLR = "#e9d5ff";
 
-// Pentagon layout
 const ORB_ANGLES = [-90, -18, 54, 126, 198];
-const ORB_RADIUS = 210;
+const ORB_RADIUS = 220;
 
 const DEFAULTS = [
   "Lok Sabha 2024", "EVM Voting", "BJP vs INC", "Criminal Cases", "Candidate Assets",
 ];
 
-// ── Individual wavy ring orb ──────────────────────────────────────────────────
+// ── Wavy ring orb ─────────────────────────────────────────────────────────────
 interface OrbProps {
   label: string; angle: number; radius: number;
   delay: number; onClick: () => void;
@@ -54,7 +52,6 @@ interface OrbProps {
 
 function WavyOrb({ label, angle, radius, delay, onClick }: OrbProps) {
   const [hov, setHov] = useState(false);
-
   const rad = (angle * Math.PI) / 180;
   const tx  = Math.round(Math.cos(rad) * radius);
   const ty  = Math.round(Math.sin(rad) * radius);
@@ -69,9 +66,8 @@ function WavyOrb({ label, angle, radius, delay, onClick }: OrbProps) {
         width: SVG_S, height: SVG_S,
         marginLeft: tx - SVG_S / 2,
         marginTop:  ty - SVG_S / 2,
-        cursor: "pointer",
-        zIndex: hov ? 20 : 10,
-        transform: hov ? "scale(1.12)" : "scale(1)",
+        cursor: "pointer", zIndex: hov ? 20 : 10,
+        transform: hov ? "scale(1.13)" : "scale(1)",
         transition: "transform 0.3s cubic-bezier(0.34,1.56,0.64,1)",
         animationName: "wFloat",
         animationDuration: `${4.2 + delay * 0.55}s`,
@@ -92,7 +88,6 @@ function WavyOrb({ label, angle, radius, delay, onClick }: OrbProps) {
           transition: "filter 0.3s ease",
         }}
       >
-        {/* Simple wavy ring — just a clean stroke, no fill */}
         <path
           d={WAVE_PATH}
           fill="none"
@@ -102,8 +97,6 @@ function WavyOrb({ label, angle, radius, delay, onClick }: OrbProps) {
           strokeLinecap="round"
           style={{ transition: "stroke 0.25s ease" }}
         />
-
-        {/* Label centered in the hollow ring */}
         <text
           x={SVG_C} y={SVG_C + 4}
           textAnchor="middle" dominantBaseline="middle"
@@ -121,27 +114,20 @@ function WavyOrb({ label, angle, radius, delay, onClick }: OrbProps) {
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
+// ── Main page ─────────────────────────────────────────────────────────────────
 interface ChatState { question: string; answer: string; keywords: string[]; loading: boolean; }
 
-export function NewSphere() {
-  const [input, setInput]   = useState("");
-  const [chat, setChat]     = useState<ChatState>({ question: "", answer: "", keywords: [], loading: false });
-
-  useEffect(() => {
-    document.documentElement.style.background = "#000";
-    document.body.style.background = "#000";
-    document.body.style.margin = "0";
-    return () => { document.documentElement.style.background = ""; document.body.style.background = ""; };
-  }, []);
+export default function ImmersiveHome() {
+  const [input, setInput] = useState("");
+  const [chat, setChat]   = useState<ChatState>({ question: "", answer: "", keywords: [], loading: false });
 
   const ask = useCallback(async (q: string) => {
     if (!q.trim() || chat.loading) return;
     setInput("");
     setChat({ question: q, answer: "", keywords: [], loading: true });
     try {
-      const res  = await fetch("/api/openai/ask", {
+      const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+      const res  = await fetch(`${base}/api/openai/ask`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
       });
@@ -154,7 +140,7 @@ export function NewSphere() {
         loading: false,
       });
     } catch {
-      setChat({ question: q, answer: "Something went wrong.", keywords: [], loading: false });
+      setChat({ question: q, answer: "Something went wrong. Please try again.", keywords: [], loading: false });
     }
   }, [chat.loading]);
 
@@ -194,7 +180,7 @@ export function NewSphere() {
         }} />
       ))}
 
-      {/* Faint nebula */}
+      {/* Nebula wash */}
       <div style={{
         position: "absolute", left: "18%", top: "12%",
         width: 500, height: 500, borderRadius: "50%",
@@ -202,23 +188,46 @@ export function NewSphere() {
         pointerEvents: "none",
       }} />
 
-      {/* Header label */}
+      {/* Top nav strip */}
       <div style={{
-        position: "absolute", top: 22, left: 0, right: 0, textAlign: "center",
-        fontSize: 10.5, fontWeight: 600, letterSpacing: "0.22em",
-        color: "rgba(168,85,247,0.3)", textTransform: "uppercase",
+        position: "absolute", top: 0, left: 0, right: 0,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "14px 28px",
+        borderBottom: "1px solid rgba(168,85,247,0.07)",
       }}>
-        Chunav Guide · Immersive
+        <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.75)", letterSpacing: "0.01em" }}>
+          <span style={{ color: COLOR, marginRight: 6 }}>✦</span>Chunav Guide
+        </div>
+        <div style={{ display: "flex", gap: 20 }}>
+          {[
+            { href: "/candidates", label: "Candidates" },
+            { href: "/how-it-works", label: "How It Works" },
+            { href: "/registration", label: "Register" },
+            { href: "/faq", label: "FAQ" },
+          ].map(({ href, label }) => (
+            <Link key={href} href={href} style={{
+              fontSize: 12, color: "rgba(255,255,255,0.38)", fontWeight: 500,
+              textDecoration: "none", letterSpacing: "0.02em",
+              transition: "color 0.2s",
+            }}
+              onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}
+              onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.38)")}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
       </div>
 
-      {/* Orb cluster */}
+      {/* Orb cluster + central card */}
       <div style={{
-        position: "relative", width: 680, height: 650,
+        position: "relative", width: 700, height: 660,
         display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
       }}>
-        {/* Central card */}
+        {/* Central glass card */}
         <div style={{
-          position: "relative", zIndex: 5, width: 340, minHeight: 180,
+          position: "relative", zIndex: 5,
+          width: 340, minHeight: 180,
           background: "rgba(5,2,18,0.84)",
           backdropFilter: "blur(36px)", WebkitBackdropFilter: "blur(36px)",
           borderRadius: 22, border: "1px solid rgba(168,85,247,0.1)",
@@ -231,17 +240,17 @@ export function NewSphere() {
           textAlign: "center",
         }}>
           {!chat.question && !chat.loading && (
-            <div style={{ color: "rgba(255,255,255,0.15)", fontSize: 14, lineHeight: 1.7 }}>
+            <div style={{ color: "rgba(255,255,255,0.15)", fontSize: 14, lineHeight: 1.75 }}>
               Ask anything about the<br />
-              <span style={{ color: "rgba(168,85,247,0.7)", fontWeight: 600 }}>2024 Lok Sabha Election</span>
+              <span style={{ color: "rgba(168,85,247,0.75)", fontWeight: 600 }}>2024 Lok Sabha Election</span>
               <br /><br />
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.08)" }}>Click a ring to explore</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.08)" }}>Click a ring to explore a topic</span>
             </div>
           )}
 
           {chat.loading && (
             <div>
-              <div style={{ color: "rgba(168,85,247,0.3)", fontSize: 12, marginBottom: 14 }}>Thinking…</div>
+              <div style={{ color: "rgba(168,85,247,0.35)", fontSize: 12, marginBottom: 14 }}>Thinking…</div>
               {[100, 72, 86].map((w, i) => (
                 <div key={i} style={{
                   height: 7, borderRadius: 4, width: `${w}%`, margin: "0 auto 9px",
@@ -255,15 +264,15 @@ export function NewSphere() {
 
           {chat.question && !chat.loading && (
             <div style={{ animation: "fadeUp 0.35s ease both" }}>
-              <div style={{ fontSize: 9.5, fontWeight: 600, color: "rgba(168,85,247,0.45)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 8 }}>You asked</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.88)", marginBottom: 12, lineHeight: 1.45 }}>{chat.question}</div>
+              <div style={{ fontSize: 9, fontWeight: 600, color: "rgba(168,85,247,0.45)", letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 8 }}>You asked</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", marginBottom: 12, lineHeight: 1.45 }}>{chat.question}</div>
               <div style={{ width: 28, height: 1, margin: "0 auto 12px", background: "linear-gradient(90deg,transparent,rgba(168,85,247,0.4),transparent)" }} />
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.78, textAlign: "left" }}>{chat.answer}</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.8, textAlign: "left" }}>{chat.answer}</div>
             </div>
           )}
         </div>
 
-        {/* 5 Wavy ring orbs */}
+        {/* 5 orbs */}
         {orbLabels.slice(0, 5).map((kw, i) => (
           <WavyOrb
             key={`${kw}-${i}`}
@@ -279,7 +288,7 @@ export function NewSphere() {
       {/* Input bar */}
       <div style={{
         position: "absolute", bottom: 28,
-        display: "flex", alignItems: "center", gap: 10, width: 490,
+        display: "flex", alignItems: "center", gap: 10, width: 500,
       }}>
         <input
           value={input}
@@ -308,7 +317,7 @@ export function NewSphere() {
             cursor: (chat.loading || !input.trim()) ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 18, color: "#fff",
-            boxShadow: "0 0 16px rgba(124,58,237,0.3)",
+            boxShadow: "0 0 16px rgba(124,58,237,0.28)",
             transition: "all 0.2s",
           }}
         >

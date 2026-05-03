@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout/Layout";
 import NotFound from "@/pages/not-found";
 
-import Home from "@/pages/Home";
+import ImmersiveHome from "@/pages/ImmersiveHome";
 import Registration from "@/pages/Registration";
 import HowItWorks from "@/pages/HowItWorks";
 import Timeline from "@/pages/Timeline";
@@ -19,20 +19,27 @@ const queryClient = new QueryClient();
 
 function Router() {
   return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/registration" component={Registration} />
-        <Route path="/how-it-works" component={HowItWorks} />
-        <Route path="/timeline" component={Timeline} />
-        <Route path="/voting-day" component={VotingDay} />
-        <Route path="/types" component={Types} />
-        <Route path="/faq" component={FAQ} />
-        <Route path="/glossary" component={Glossary} />
-        <Route path="/candidates" component={Candidates} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      {/* Home is full-screen immersive — no Layout wrapper */}
+      <Route path="/" component={ImmersiveHome} />
+
+      {/* All other pages use the standard Layout */}
+      <Route>
+        <Layout>
+          <Switch>
+            <Route path="/registration" component={Registration} />
+            <Route path="/how-it-works" component={HowItWorks} />
+            <Route path="/timeline" component={Timeline} />
+            <Route path="/voting-day" component={VotingDay} />
+            <Route path="/types" component={Types} />
+            <Route path="/faq" component={FAQ} />
+            <Route path="/glossary" component={Glossary} />
+            <Route path="/candidates" component={Candidates} />
+            <Route component={NotFound} />
+          </Switch>
+        </Layout>
+      </Route>
+    </Switch>
   );
 }
 
