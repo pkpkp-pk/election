@@ -5,6 +5,7 @@ export const modules: ModuleMap = {
   "./components/mockups/immersive-chat/ImmerseA.tsx": () => import("../components/mockups/immersive-chat/ImmerseA.tsx"),
   "./components/mockups/immersive-chat/ImmerseB.tsx": () => import("../components/mockups/immersive-chat/ImmerseB.tsx"),
   "./components/mockups/immersive-chat/ImmersiveChat.tsx": () => import("../components/mockups/immersive-chat/ImmersiveChat.tsx"),
+  "./components/mockups/immersive-chat/NewSphere.tsx": () => import("../components/mockups/immersive-chat/NewSphere.tsx"),
   "./components/mockups/immersive-chat/OrbitalDrift.tsx": () => import("../components/mockups/immersive-chat/OrbitalDrift.tsx"),
   "./components/mockups/immersive-chat/Terminal.tsx": () => import("../components/mockups/immersive-chat/Terminal.tsx")
 };
