@@ -1,82 +1,81 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 // ── Stars ─────────────────────────────────────────────────────────────────────
-const STARS = Array.from({ length: 65 }, (_, i) => ({
+const STARS = Array.from({ length: 60 }, (_, i) => ({
   w: ((i * 29 + 3) % 3) + 1,
   left: (i * 18.3 + 9) % 100,
   top:  (i * 14.7 + 21) % 100,
   op: 0.04 + (i % 9) * 0.045,
-  twinkle: (i % 3 === 0),
+  twinkle: (i % 4 === 0),
 }));
 
-// ── Pentagon orb layout ───────────────────────────────────────────────────────
+// ── Wavy ring path builder ────────────────────────────────────────────────────
+// r(θ) = R + A·sin(N·θ)  — smooth scalloped circle like the reference image
+const N_BUMPS   = 12;   // number of bumps around the ring
+const R_BASE    = 38;   // base radius
+const AMPLITUDE = 11;   // wave depth
+const STROKE_W  = 7.5;  // stroke thickness (the "tube")
+const N_PTS     = 360;  // path resolution — high = perfectly smooth
+
+const PAD = STROKE_W / 2 + 6;
+const SVG_S = (R_BASE + AMPLITUDE + PAD) * 2;
+const SVG_C = SVG_S / 2;
+
+function buildWavePath(): string {
+  const pts: string[] = [];
+  for (let i = 0; i <= N_PTS; i++) {
+    const theta = (i / N_PTS) * Math.PI * 2 - Math.PI / 2; // start at top
+    const r = R_BASE + AMPLITUDE * Math.sin(N_BUMPS * theta);
+    const x = (SVG_C + r * Math.cos(theta)).toFixed(3);
+    const y = (SVG_C + r * Math.sin(theta)).toFixed(3);
+    pts.push(i === 0 ? `M${x},${y}` : `L${x},${y}`);
+  }
+  return pts.join(" ") + " Z";
+}
+const WAVE_PATH = buildWavePath();
+
+// ── Orb themes — neon color per orb ──────────────────────────────────────────
+const THEMES = [
+  { stroke: "#a855f7", glow: "rgba(168,85,247,0.9)",  inner: "rgba(120,50,220,0.08)",  shadow: "rgba(120,40,220,0.4)",  label: "#d8b4fe" },
+  { stroke: "#06b6d4", glow: "rgba(6,182,212,0.9)",   inner: "rgba(6,140,180,0.07)",   shadow: "rgba(6,150,200,0.38)",  label: "#a5f3fc" },
+  { stroke: "#22c55e", glow: "rgba(34,197,94,0.9)",   inner: "rgba(20,160,70,0.07)",   shadow: "rgba(20,180,70,0.38)",  label: "#86efac" },
+  { stroke: "#ec4899", glow: "rgba(236,72,153,0.9)",  inner: "rgba(200,50,130,0.08)",  shadow: "rgba(200,50,140,0.38)", label: "#f9a8d4" },
+  { stroke: "#f59e0b", glow: "rgba(245,158,11,0.9)",  inner: "rgba(210,120,0,0.07)",   shadow: "rgba(220,130,0,0.38)",  label: "#fde68a" },
+];
+
+// Pentagon layout
+const ORB_ANGLES = [-90, -18, 54, 126, 198];
+const ORB_RADIUS = 210;
+
 const DEFAULTS = [
   "Lok Sabha 2024", "EVM Voting", "BJP vs INC", "Criminal Cases", "Candidate Assets",
 ];
 
-// Pentagon angles, 72° apart, top = -90°
-const ORB_ANGLES = [-90, -18, 54, 126, 198];
-const ORB_RADIUS = 205;
-
-// Each sphere: its own deep color — jewel-toned, NOT neon
-const SPHERE_THEMES = [
-  {
-    // Deep violet-indigo
-    light: "#d4bbff", mid: "#7c3aed", shadow: "#1e0458", edge: "#4c1d95",
-    caustic: "rgba(180,140,255,0.55)", spec: "rgba(255,255,255,0.92)",
-    glow: "rgba(124,58,237,0.6)",
-  },
-  {
-    // Cobalt ocean
-    light: "#bae6fd", mid: "#0369a1", shadow: "#02203c", edge: "#075985",
-    caustic: "rgba(125,200,255,0.5)", spec: "rgba(255,255,255,0.88)",
-    glow: "rgba(3,105,161,0.55)",
-  },
-  {
-    // Forest emerald
-    light: "#a7f3d0", mid: "#047857", shadow: "#012b1a", edge: "#065f46",
-    caustic: "rgba(110,231,183,0.5)", spec: "rgba(255,255,255,0.85)",
-    glow: "rgba(4,120,87,0.55)",
-  },
-  {
-    // Magenta-rose
-    light: "#fecdd3", mid: "#be185d", shadow: "#3d0020", edge: "#9d174d",
-    caustic: "rgba(251,160,183,0.55)", spec: "rgba(255,255,255,0.9)",
-    glow: "rgba(190,24,93,0.6)",
-  },
-  {
-    // Amber-bronze
-    light: "#fde68a", mid: "#b45309", shadow: "#2d1400", edge: "#92400e",
-    caustic: "rgba(253,211,100,0.5)", spec: "rgba(255,255,255,0.88)",
-    glow: "rgba(180,83,9,0.55)",
-  },
-];
-
-const R = 34; // sphere radius
-const SVG_SIZE = R * 2 + 60; // extra room for glow
-const C = SVG_SIZE / 2;
-
-interface SphereOrbProps {
-  label: string;
-  angle: number;
-  radius: number;
-  delay: number;
-  themeIdx: number;
-  onClick: () => void;
+// ── Individual wavy ring orb ──────────────────────────────────────────────────
+interface OrbProps {
+  label: string; angle: number; radius: number;
+  delay: number; themeIdx: number; onClick: () => void;
 }
 
-function SphereOrb({ label, angle, radius, delay, themeIdx, onClick }: SphereOrbProps) {
+function WavyOrb({ label, angle, radius, delay, themeIdx, onClick }: OrbProps) {
   const [hov, setHov] = useState(false);
+  const [rot, setRot] = useState(delay * 12); // staggered start rotation
+  const th = THEMES[themeIdx % THEMES.length];
+
   const rad = (angle * Math.PI) / 180;
   const tx = Math.round(Math.cos(rad) * radius);
   const ty = Math.round(Math.sin(rad) * radius);
-  const t = SPHERE_THEMES[themeIdx % SPHERE_THEMES.length];
 
-  const gid   = `sg${themeIdx}`;   // main body gradient
-  const lgid  = `sl${themeIdx}`;   // light cap gradient
-  const rgid  = `sr${themeIdx}`;   // rim gradient
-  const cgid  = `sc${themeIdx}`;   // caustic ring gradient
-  const fgid  = `sf${themeIdx}`;   // floor shadow radial gradient
+  const filterId  = `gf${themeIdx}`;
+  const gradId    = `gg${themeIdx}`;
+  const shadowId  = `gs${themeIdx}`;
+
+  // Slow rotation via interval — each orb at its own pace
+  useEffect(() => {
+    const speed = 0.18 + themeIdx * 0.04; // deg per frame
+    const id = setInterval(() => setRot(r => r + speed), 40);
+    return () => clearInterval(id);
+  }, [themeIdx]);
 
   return (
     <div
@@ -84,140 +83,104 @@ function SphereOrb({ label, angle, radius, delay, themeIdx, onClick }: SphereOrb
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        position: "absolute",
-        left: "50%", top: "50%",
-        width: SVG_SIZE, height: SVG_SIZE,
-        marginLeft: tx - SVG_SIZE / 2,
-        marginTop:  ty - SVG_SIZE / 2,
-        cursor: "pointer",
-        zIndex: hov ? 20 : 10,
-        animationName: "sFloat",
-        animationDuration: `${4.2 + delay * 0.6}s`,
-        animationDelay: `${delay * 0.42}s`,
+        position: "absolute", left: "50%", top: "50%",
+        width: SVG_S, height: SVG_S,
+        marginLeft: tx - SVG_S / 2,
+        marginTop:  ty - SVG_S / 2,
+        cursor: "pointer", zIndex: hov ? 20 : 10,
+        animationName: "wFloat",
+        animationDuration: `${4.0 + delay * 0.6}s`,
+        animationDelay: `${delay * 0.44}s`,
         animationTimingFunction: "ease-in-out",
         animationIterationCount: "infinite",
         animationDirection: "alternate",
         animationFillMode: "both",
       }}
     >
-      <div style={{
-        transform: hov ? "scale(1.18)" : "scale(1)",
-        transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)",
-      }}>
-        <svg width={SVG_SIZE} height={SVG_SIZE} style={{ display: "block", overflow: "visible" }}>
-          <defs>
-            {/* Main sphere body: dark at top-left, light at bottom-right = 3D lighting from top-left */}
-            <radialGradient id={gid} cx="35%" cy="30%" r="75%">
-              <stop offset="0%"   stopColor={t.light}  stopOpacity="0.25" />
-              <stop offset="30%"  stopColor={t.mid}    stopOpacity="0.85" />
-              <stop offset="75%"  stopColor={t.shadow} stopOpacity="1" />
-              <stop offset="100%" stopColor={t.edge}   stopOpacity="1" />
-            </radialGradient>
+      <svg width={SVG_S} height={SVG_S} style={{ display: "block", overflow: "visible" }}>
+        <defs>
+          {/* Glow filter */}
+          <filter id={filterId} x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation={hov ? 5 : 3} result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
 
-            {/* Specular light cap: pure white blowout top-left */}
-            <radialGradient id={lgid} cx="30%" cy="25%" r="45%">
-              <stop offset="0%"   stopColor={t.spec}          stopOpacity={hov ? 0.88 : 0.72} />
-              <stop offset="40%"  stopColor={t.spec}          stopOpacity="0.1" />
-              <stop offset="100%" stopColor="transparent"      stopOpacity="0" />
-            </radialGradient>
+          {/* Outer shadow filter */}
+          <filter id={shadowId} x="-30%" y="-20%" width="160%" height="160%">
+            <feDropShadow dx="0" dy={hov ? 10 : 7} stdDeviation={hov ? 8 : 5}
+              floodColor={th.shadow} floodOpacity="1" />
+          </filter>
 
-            {/* Rim light: thin bright arc bottom-right, as if backlit */}
-            <radialGradient id={rgid} cx="72%" cy="75%" r="50%">
-              <stop offset="0%"   stopColor={t.light}  stopOpacity={hov ? 0.7 : 0.45} />
-              <stop offset="100%" stopColor="transparent" stopOpacity="0" />
-            </radialGradient>
+          {/* Stroke color gradient: bright top, slightly darker bottom for 3D tube feel */}
+          <linearGradient id={gradId} x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%"   stopColor={th.stroke} stopOpacity="1" />
+            <stop offset="45%"  stopColor={th.stroke} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={th.stroke} stopOpacity="0.65" />
+          </linearGradient>
+        </defs>
 
-            {/* Caustic ring: equatorial glow band */}
-            <radialGradient id={cgid} cx="50%" cy="50%" r="50%">
-              <stop offset="60%"  stopColor="transparent"  stopOpacity="0" />
-              <stop offset="85%"  stopColor={t.caustic}    stopOpacity={hov ? 0.65 : 0.38} />
-              <stop offset="100%" stopColor="transparent"  stopOpacity="0" />
-            </radialGradient>
+        {/* === Drop shadow layer (same path, blurred, darker) === */}
+        <g transform={`rotate(${rot}, ${SVG_C}, ${SVG_C})`}>
+          <path
+            d={WAVE_PATH}
+            fill="none"
+            stroke={th.shadow}
+            strokeWidth={STROKE_W + 1}
+            filter={`url(#${shadowId})`}
+            opacity={0.6}
+          />
+        </g>
 
-            {/* Drop shadow below sphere */}
-            <radialGradient id={fgid} cx="50%" cy="50%" r="50%">
-              <stop offset="0%"   stopColor="rgba(0,0,0,0.55)" />
-              <stop offset="100%" stopColor="rgba(0,0,0,0)" />
-            </radialGradient>
+        {/* === Main wavy ring === */}
+        <g transform={`rotate(${rot}, ${SVG_C}, ${SVG_C})`}>
+          {/* Very subtle dark inner fill — gives the ring body */}
+          <path d={WAVE_PATH} fill={th.inner} stroke="none" />
 
-            {/* Clip the sphere to a circle */}
-            <clipPath id={`clip${themeIdx}`}>
-              <circle cx={C} cy={C} r={R} />
-            </clipPath>
-          </defs>
-
-          {/* Soft drop shadow ellipse below */}
-          <ellipse
-            cx={C} cy={C + R + 10}
-            rx={R * 0.85} ry={R * 0.25}
-            fill={`url(#${fgid})`}
+          {/* Glow halo (blurred copy behind) */}
+          <path
+            d={WAVE_PATH} fill="none"
+            stroke={th.stroke}
+            strokeWidth={STROKE_W + 3}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            filter={`url(#${filterId})`}
+            opacity={hov ? 0.75 : 0.45}
           />
 
-          {/* Outer glow when hovered */}
-          {hov && (
-            <circle cx={C} cy={C} r={R + 14}
-              fill={t.glow.replace("0.6","0.12")}
-            />
-          )}
-
-          {/* Ambient glow ring always */}
-          <circle cx={C} cy={C} r={R + 8}
-            fill={t.glow.replace("0.6","0.07")}
+          {/* Main bright stroke */}
+          <path
+            d={WAVE_PATH} fill="none"
+            stroke={`url(#${gradId})`}
+            strokeWidth={STROKE_W}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+            opacity={hov ? 1 : 0.88}
           />
 
-          {/* Main sphere body */}
-          <circle cx={C} cy={C} r={R} fill={`url(#${gid})`} />
-
-          {/* Caustic equatorial ring (clipped to sphere) */}
-          <circle cx={C} cy={C} r={R} fill={`url(#${cgid})`}
-            clipPath={`url(#clip${themeIdx})`} />
-
-          {/* Specular light cap (clipped) */}
-          <circle cx={C} cy={C} r={R} fill={`url(#${lgid})`}
-            clipPath={`url(#clip${themeIdx})`} />
-
-          {/* Rim back-light (clipped) */}
-          <circle cx={C} cy={C} r={R} fill={`url(#${rgid})`}
-            clipPath={`url(#clip${themeIdx})`} />
-
-          {/* Tiny secondary specular flare */}
-          <ellipse
-            cx={C - R * 0.38} cy={C - R * 0.42}
-            rx={R * 0.12} ry={R * 0.07}
-            fill="white" fillOpacity={hov ? 0.55 : 0.32}
-            clipPath={`url(#clip${themeIdx})`}
+          {/* Inner thin bright core line for tube depth */}
+          <path
+            d={WAVE_PATH} fill="none"
+            stroke="rgba(255,255,255,0.35)"
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+            strokeLinecap="round"
           />
+        </g>
 
-          {/* Label pill — floats below the sphere */}
-          <foreignObject
-            x={C - 54} y={C + R + 8}
-            width={108} height={32}
-          >
-            <div style={{
-              background: hov
-                ? `${t.shadow}ee`
-                : "rgba(0,0,0,0.42)",
-              border: `1px solid ${hov ? t.caustic : "rgba(255,255,255,0.09)"}`,
-              borderRadius: 20,
-              padding: "3px 0",
-              fontSize: 9,
-              fontWeight: 700,
-              color: hov ? t.light : "rgba(255,255,255,0.38)",
-              textAlign: "center",
-              fontFamily: "'Inter',system-ui,sans-serif",
-              backdropFilter: "blur(6px)",
-              letterSpacing: "0.03em",
-              boxShadow: hov ? `0 0 10px ${t.glow.replace("0.6","0.35")}` : "none",
-              transition: "all 0.25s ease",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}>
-              {label}
-            </div>
-          </foreignObject>
-        </svg>
-      </div>
+        {/* Label — centered, doesn't rotate */}
+        <text
+          x={SVG_C} y={SVG_C + 4}
+          textAnchor="middle" dominantBaseline="middle"
+          fill={hov ? th.label : "rgba(255,255,255,0.45)"}
+          fontSize={hov ? 10 : 9}
+          fontWeight="700"
+          fontFamily="'Inter',system-ui,sans-serif"
+          letterSpacing="0.03em"
+          style={{ transition: "fill 0.2s, font-size 0.2s", pointerEvents: "none" }}
+        >
+          {label.length > 14 ? label.slice(0, 13) + "…" : label}
+        </text>
+      </svg>
     </div>
   );
 }
@@ -264,31 +227,27 @@ export function NewSphere() {
   return (
     <div style={{
       width: "100vw", height: "100vh",
-      background: "radial-gradient(ellipse at 30% 20%, #0c0820 0%, #050210 55%, #000 100%)",
+      background: "radial-gradient(ellipse at 30% 20%, #0d0820 0%, #050210 55%, #000 100%)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       overflow: "hidden", position: "relative",
       fontFamily: "'Inter', system-ui, sans-serif",
     }}>
       <style>{`
-        @keyframes sFloat {
-          from { transform: translateY(0px);   }
-          to   { transform: translateY(-12px); }
+        @keyframes wFloat {
+          from { transform: translateY(0px); }
+          to   { transform: translateY(-11px); }
         }
         @keyframes fadeUp {
           from { opacity:0; transform:translateY(8px); }
-          to   { opacity:1; transform:translateY(0);   }
+          to   { opacity:1; transform:translateY(0); }
         }
         @keyframes shimmer {
           0%   { background-position:-600px 0; }
           100% { background-position: 600px 0; }
         }
-        @keyframes twinkle {
-          0%,100% { opacity: var(--op); }
-          50%      { opacity: calc(var(--op) * 0.3); }
-        }
         @keyframes ringPulse {
-          0%,100% { transform:translate(-50%,-50%) scale(0.9); opacity:0.18; }
-          50%      { transform:translate(-50%,-50%) scale(1.04); opacity:0.06; }
+          0%,100% { transform:translate(-50%,-50%) scale(0.9); opacity:0.15; }
+          50%      { transform:translate(-50%,-50%) scale(1.05); opacity:0.05; }
         }
         input::placeholder { color:rgba(255,255,255,0.2); }
         input:focus { outline:none; }
@@ -298,88 +257,72 @@ export function NewSphere() {
       {STARS.map((s, i) => (
         <div key={i} style={{
           position: "absolute", width: s.w, height: s.w, borderRadius: "50%",
-          background: "#fff", left: `${s.left}%`, top: `${s.top}%`,
-          opacity: s.op, pointerEvents: "none",
-          animation: s.twinkle ? `twinkle ${3 + (i % 4)}s ease-in-out ${i * 0.3}s infinite` : "none",
-        } as React.CSSProperties} />
+          background: "#fff", left: `${s.left}%`, top: `${s.top}%`, opacity: s.op,
+          pointerEvents: "none",
+        }} />
       ))}
 
-      {/* Subtle nebula wash */}
-      <div style={{
-        position: "absolute", left: "22%", top: "18%",
-        width: 500, height: 500, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(100,50,200,0.05) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
-      <div style={{
-        position: "absolute", left: "68%", top: "60%",
-        width: 400, height: 400, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(10,80,160,0.04) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
+      {/* Faint nebula blobs */}
+      <div style={{ position:"absolute", left:"20%", top:"15%", width:450, height:450,
+        borderRadius:"50%", background:"radial-gradient(circle,rgba(100,40,220,0.05) 0%,transparent 70%)", pointerEvents:"none" }} />
+      <div style={{ position:"absolute", left:"68%", top:"62%", width:360, height:360,
+        borderRadius:"50%", background:"radial-gradient(circle,rgba(6,150,212,0.04) 0%,transparent 70%)", pointerEvents:"none" }} />
 
       {/* Header */}
       <div style={{
         position: "absolute", top: 22, left: 0, right: 0, textAlign: "center",
         fontSize: 10.5, fontWeight: 600, letterSpacing: "0.22em",
-        color: "rgba(160,130,255,0.32)", textTransform: "uppercase",
+        color: "rgba(168,85,247,0.32)", textTransform: "uppercase",
       }}>
         Chunav Guide · Immersive
       </div>
 
-      {/* Orb cluster */}
+      {/* Orb cluster + central card */}
       <div style={{
-        position: "relative", width: 660, height: 640,
+        position: "relative", width: 680, height: 650,
         display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
       }}>
-        {/* Pulse ring when active */}
         {chat.question && (
           <div style={{
             position: "absolute", left: "50%", top: "50%",
             width: 200, height: 200,
-            border: "1px solid rgba(160,130,255,0.12)",
+            border: "1px solid rgba(168,85,247,0.1)",
             borderRadius: "50%",
             animation: "ringPulse 4s ease-in-out infinite",
             pointerEvents: "none",
           }} />
         )}
 
-        {/* Central glass card */}
+        {/* Central card */}
         <div style={{
-          position: "relative", zIndex: 5,
-          width: 340, minHeight: 185,
-          background: "rgba(6,3,20,0.80)",
+          position: "relative", zIndex: 5, width: 340, minHeight: 185,
+          background: "rgba(5,2,18,0.82)",
           backdropFilter: "blur(36px)", WebkitBackdropFilter: "blur(36px)",
-          borderRadius: 22,
-          border: "1px solid rgba(160,130,255,0.10)",
+          borderRadius: 22, border: "1px solid rgba(168,85,247,0.1)",
           padding: "28px 26px",
           boxShadow: [
-            "0 0 0 1px rgba(160,130,255,0.05)",
-            "0 0 60px rgba(90,40,200,0.09)",
+            "0 0 0 1px rgba(168,85,247,0.05)",
+            "0 0 60px rgba(100,30,200,0.09)",
             "0 16px 60px rgba(0,0,0,0.85)",
-            "inset 0 1px 0 rgba(255,255,255,0.035)",
+            "inset 0 1px 0 rgba(255,255,255,0.03)",
           ].join(", "),
           textAlign: "center",
         }}>
           {!chat.question && !chat.loading && (
             <div style={{ color: "rgba(255,255,255,0.15)", fontSize: 14, lineHeight: 1.7 }}>
               Ask anything about the<br />
-              <span style={{ color: "rgba(160,130,255,0.7)", fontWeight: 600 }}>
-                2024 Lok Sabha Election
-              </span>
+              <span style={{ color: "rgba(168,85,247,0.7)", fontWeight: 600 }}>2024 Lok Sabha Election</span>
               <br /><br />
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.09)" }}>
-                Hover a sphere · Click to explore
-              </span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.09)" }}>Hover a ring · Click to explore</span>
             </div>
           )}
           {chat.loading && (
             <div>
-              <div style={{ color: "rgba(160,130,255,0.32)", fontSize: 12, marginBottom: 14 }}>Thinking…</div>
+              <div style={{ color: "rgba(168,85,247,0.3)", fontSize: 12, marginBottom: 14 }}>Thinking…</div>
               {[100, 74, 88].map((w, i) => (
                 <div key={i} style={{
                   height: 7, borderRadius: 4, width: `${w}%`, margin: "0 auto 9px",
-                  background: "linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(160,130,255,0.09) 50%, rgba(255,255,255,0.02) 75%)",
+                  background: "linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(168,85,247,0.1) 50%, rgba(255,255,255,0.02) 75%)",
                   backgroundSize: "600px 100%",
                   animation: `shimmer 1.5s ${i * 0.18}s linear infinite`,
                 }} />
@@ -388,45 +331,24 @@ export function NewSphere() {
           )}
           {chat.question && !chat.loading && (
             <div style={{ animation: "fadeUp 0.35s ease both" }}>
-              <div style={{
-                fontSize: 9.5, fontWeight: 600,
-                color: "rgba(160,130,255,0.48)", letterSpacing: "0.15em",
-                textTransform: "uppercase", marginBottom: 8,
-              }}>You asked</div>
-              <div style={{
-                fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.88)",
-                marginBottom: 12, lineHeight: 1.45,
-              }}>{chat.question}</div>
-              <div style={{
-                width: 28, height: 1, margin: "0 auto 12px",
-                background: "linear-gradient(90deg,transparent,rgba(160,130,255,0.4),transparent)",
-              }} />
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.78, textAlign: "left" }}>
-                {chat.answer}
-              </div>
+              <div style={{ fontSize: 9.5, fontWeight: 600, color: "rgba(168,85,247,0.48)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 8 }}>You asked</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.88)", marginBottom: 12, lineHeight: 1.45 }}>{chat.question}</div>
+              <div style={{ width: 28, height: 1, margin: "0 auto 12px", background: "linear-gradient(90deg,transparent,rgba(168,85,247,0.4),transparent)" }} />
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 1.78, textAlign: "left" }}>{chat.answer}</div>
             </div>
           )}
         </div>
 
-        {/* 5 Spheres */}
+        {/* 5 Wavy ring orbs */}
         {orbLabels.slice(0, 5).map((kw, i) => (
-          <SphereOrb
-            key={`${kw}-${i}`}
-            label={kw}
-            angle={ORB_ANGLES[i]}
-            radius={ORB_RADIUS}
-            delay={i}
-            themeIdx={i}
-            onClick={() => ask(kw)}
-          />
+          <WavyOrb key={`${kw}-${i}`} label={kw}
+            angle={ORB_ANGLES[i]} radius={ORB_RADIUS}
+            delay={i} themeIdx={i} onClick={() => ask(kw)} />
         ))}
       </div>
 
-      {/* Input bar */}
-      <div style={{
-        position: "absolute", bottom: 28,
-        display: "flex", alignItems: "center", gap: 10, width: 490,
-      }}>
+      {/* Input */}
+      <div style={{ position: "absolute", bottom: 28, display: "flex", alignItems: "center", gap: 10, width: 490 }}>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
@@ -434,14 +356,13 @@ export function NewSphere() {
           placeholder="Ask about 2024 Lok Sabha elections…"
           style={{
             flex: 1, padding: "13px 22px",
-            background: "rgba(160,130,255,0.04)",
-            border: "1px solid rgba(160,130,255,0.18)",
+            background: "rgba(168,85,247,0.04)",
+            border: "1px solid rgba(168,85,247,0.18)",
             borderRadius: 40, color: "#fff", fontSize: 14,
             backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
-            boxShadow: "0 0 24px rgba(90,40,200,0.06)",
           }}
-          onFocus={e => (e.currentTarget.style.borderColor = "rgba(160,130,255,0.5)")}
-          onBlur={e  => (e.currentTarget.style.borderColor = "rgba(160,130,255,0.18)")}
+          onFocus={e => (e.currentTarget.style.borderColor = "rgba(168,85,247,0.5)")}
+          onBlur={e  => (e.currentTarget.style.borderColor = "rgba(168,85,247,0.18)")}
         />
         <button
           onClick={() => ask(input)}
@@ -449,9 +370,9 @@ export function NewSphere() {
           style={{
             width: 44, height: 44, borderRadius: "50%", flexShrink: 0,
             background: (chat.loading || !input.trim())
-              ? "rgba(160,130,255,0.1)"
+              ? "rgba(168,85,247,0.1)"
               : "linear-gradient(135deg, #7c3aed 0%, #4338ca 100%)",
-            border: "1px solid rgba(160,130,255,0.22)",
+            border: "1px solid rgba(168,85,247,0.22)",
             cursor: (chat.loading || !input.trim()) ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 18, color: "#fff",
