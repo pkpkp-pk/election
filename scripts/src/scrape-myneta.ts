@@ -253,7 +253,7 @@ async function main() {
     saveState(state);
   }
 
-  let loggedAt = state.nextId;
+  let lastLogTime = Date.now();
 
   for (let id = state.nextId; id <= MAX_ID; id++) {
     state.nextId = id;
@@ -272,13 +272,15 @@ async function main() {
       }
     }
 
-    // Progress log every 100 IDs
-    if (id - loggedAt >= 100 || id === MAX_ID) {
+    // Progress log every 10 seconds
+    const now = Date.now();
+    if (now - lastLogTime >= 10_000 || id === MAX_ID) {
       const pct = (((id - START_ID) / (MAX_ID - START_ID)) * 100).toFixed(1);
+      const rate = (((id - START_ID) * DELAY_MS) / 60000).toFixed(0);
       console.log(
-        `  ID ${id}/${MAX_ID} (${pct}%) | inserted=${state.inserted + pending.length} | skipped=${state.skipped} | failed=${state.failed}`,
+        `  ID ${id}/${MAX_ID} (${pct}%) | inserted=${state.inserted + pending.length} | skipped=${state.skipped} | elapsed=${rate}min`,
       );
-      loggedAt = id;
+      lastLogTime = now;
     }
 
     if (pending.length >= UPSERT_BATCH) await flush();
