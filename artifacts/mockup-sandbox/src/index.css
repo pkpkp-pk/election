@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Dark baseline so /preview/* iframes don't flash white before React mounts */
+#root { min-height: 100vh; }
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

@@ -82,7 +82,11 @@ function PreviewRenderer({
     );
   }
 
-  if (!Component) return null;
+  if (!Component) {
+    return (
+      <div style={{ width: "100vw", height: "100vh", background: "#000" }} />
+    );
+  }
 
   return <Component />;
 }
