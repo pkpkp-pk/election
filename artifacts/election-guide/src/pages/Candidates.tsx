@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, User, Shield, Star, Briefcase, AlertTriangle,
@@ -598,17 +599,27 @@ export default function Candidates() {
   const [error, setError] = useState("");
   const [searched, setSearched] = useState("");
 
+  const debouncedInput = useDebounce(input, 400);
+  const isDebouncing = input.trim() !== debouncedInput.trim() && input.trim().length >= 2;
+
+  // Refs so the search callback never goes stale
+  const loadingRef = useRef(loading);
+  loadingRef.current = loading;
+  const searchedRef = useRef(searched);
+  searchedRef.current = searched;
+
   const search = useCallback(async (query: string) => {
-    if (!query.trim() || loading) return;
+    const q = query.trim();
+    if (!q || loadingRef.current) return;
     setLoading(true);
     setResult(null);
     setError("");
-    setSearched(query.trim());
+    setSearched(q);
     try {
       const res = await fetch("/api/openai/candidate-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim() }),
+        body: JSON.stringify({ query: q }),
       });
       if (!res.ok) throw new Error("Request failed");
       const data: SearchResult = await res.json();
@@ -618,11 +629,27 @@ export default function Candidates() {
     } finally {
       setLoading(false);
     }
-  }, [loading]);
+  }, []);
+
+  // Auto-search when debounced value settles (min 2 chars, skip duplicates)
+  useEffect(() => {
+    const q = debouncedInput.trim();
+    if (q.length >= 2 && q !== searchedRef.current && !loadingRef.current) {
+      search(q);
+    }
+    // Clear results when input is fully cleared
+    if (q.length === 0) {
+      setResult(null);
+      setSearched("");
+      setError("");
+    }
+  }, [debouncedInput, search]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    search(input);
+    // Force immediate search — bypass debounce by calling directly
+    const q = input.trim();
+    if (q && q !== searchedRef.current) search(q);
   }
 
   const hasResults = result && result.candidates.length > 0;
@@ -657,14 +684,22 @@ export default function Candidates() {
 
           <form onSubmit={handleSubmit} className="relative mb-5">
             <div className="flex items-center gap-3 p-2 pl-5 rounded-2xl border border-white/15 bg-white/5 backdrop-blur focus-within:border-white/30 transition-all">
-              <Search className="h-4 w-4 text-white/40 flex-shrink-0" />
+              {isDebouncing ? (
+                <span className="relative flex h-4 w-4 flex-shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-60" />
+                  <span className="relative inline-flex rounded-full h-4 w-4 items-center justify-center">
+                    <Search className="h-3.5 w-3.5 text-orange-300" />
+                  </span>
+                </span>
+              ) : (
+                <Search className="h-4 w-4 text-white/40 flex-shrink-0" />
+              )}
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Name, constituency, or party…"
                 className="flex-1 bg-transparent text-white placeholder:text-white/30 outline-none text-sm md:text-base py-2"
-                disabled={loading}
                 autoFocus
               />
               <button
