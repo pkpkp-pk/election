@@ -2,7 +2,7 @@ import { Router } from "express";
 import { eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { conversations, messages, insertConversationSchema, insertMessageSchema, candidates, candidateBios } from "@workspace/db/schema";
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { ai } from "@workspace/integrations-gemini-ai";
 import { CreateOpenaiConversationBody, SendOpenaiMessageBody, GetOpenaiConversationParams, DeleteOpenaiConversationParams, SendOpenaiMessageParams, ListOpenaiMessagesParams } from "@workspace/api-zod";
 
 const router = Router();
@@ -231,26 +231,29 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
       .orderBy(messages.createdAt);
 
     const chatMessages = history.map((m) => ({
-      role: m.role as "user" | "assistant" | "system",
-      content: m.content,
+      role: m.role === "assistant" ? "model" : "user" as "model" | "user",
+      parts: [{ text: m.content }],
     }));
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    const stream = await openai.chat.completions.create({
-      model: "gpt-5",
-      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...chatMessages],
-      stream: true,
+    const stream = await ai.models.generateContentStream({
+      model: "gemini-2.5-flash",
+      contents: chatMessages,
+      config: {
+        systemInstruction: SYSTEM_PROMPT,
+        maxOutputTokens: 8192,
+      },
     });
 
     let fullContent = "";
     for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content ?? "";
-      if (delta) {
-        fullContent += delta;
-        res.write(`data: ${JSON.stringify({ content: delta })}\n\n`);
+      const text = chunk.text;
+      if (text) {
+        fullContent += text;
+        res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
       }
     }
 
@@ -356,7 +359,7 @@ router.post("/openai/candidate-search", async (req, res) => {
   }
 });
 
-// Endpoint: get AI bio for a specific candidate — cache-first, generate with gpt-5.4 on miss
+// Endpoint: get AI bio for a specific candidate — cache-first, generate with Gemini on miss
 router.post("/openai/candidate-bio", async (req, res) => {
   const { mynetaId, name, party, constituency, criminalCases, totalAssetsText, age, profession, parentage } = req.body ?? {};
 
@@ -381,7 +384,7 @@ router.post("/openai/candidate-bio", async (req, res) => {
       }
     }
 
-    // ── 2. Generate with gpt-5.4 ────────────────────────────────────────────
+    // ── 2. Generate with Gemini ────────────────────────────────────────────
     const contextLines = [
       `Candidate: ${name}`,
       `Party: ${party ?? "Unknown"}`,
@@ -394,16 +397,22 @@ router.post("/openai/candidate-bio", async (req, res) => {
       `Source: ECI affidavit (Lok Sabha 2024)`,
     ].filter(Boolean);
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5.4",
-      messages: [
-        { role: "system", content: CANDIDATE_BIO_PROMPT },
-        { role: "user", content: `Generate biographical details for this candidate:\n\n${contextLines.join("\n")}` },
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `Generate biographical details for this candidate:\n\n${contextLines.join("\n")}` }],
+        },
       ],
-      response_format: { type: "json_object" },
+      config: {
+        systemInstruction: CANDIDATE_BIO_PROMPT,
+        responseMimeType: "application/json",
+        maxOutputTokens: 8192,
+      },
     });
 
-    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const raw = response.text ?? "{}";
     let bio: unknown;
     try { bio = JSON.parse(raw); } catch {
       bio = { brief: "Biographical information not available.", parties_history: [], constituencies_history: [], major_works: [], popularity: { score: 3, description: "No data" } };
@@ -415,7 +424,7 @@ router.post("/openai/candidate-bio", async (req, res) => {
         await db.insert(candidateBios).values({
           mynetaId: Number(mynetaId),
           bioJson: JSON.stringify(bio),
-          modelVersion: "gpt-5.4",
+          modelVersion: "gemini-2.5-flash",
         }).onConflictDoNothing();
       } catch (cacheErr) {
         req.log.warn({ cacheErr }, "Bio cache write failed — returning result anyway");
@@ -460,15 +469,21 @@ router.post("/openai/candidate", async (req, res) => {
 }`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5",
-      messages: [
-        { role: "system", content: LEGACY_PROMPT },
-        { role: "user", content: `Get profile for Indian politician: ${name.trim()}` },
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `Get profile for Indian politician: ${name.trim()}` }],
+        },
       ],
-      response_format: { type: "json_object" },
+      config: {
+        systemInstruction: LEGACY_PROMPT,
+        responseMimeType: "application/json",
+        maxOutputTokens: 8192,
+      },
     });
-    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const raw = response.text ?? "{}";
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
@@ -489,15 +504,21 @@ router.post("/openai/ask", async (req, res) => {
     return;
   }
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5",
-      messages: [
-        { role: "system", content: STRUCTURED_SYSTEM_PROMPT },
-        { role: "user", content: question.trim() },
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: question.trim() }],
+        },
       ],
-      response_format: { type: "json_object" },
+      config: {
+        systemInstruction: STRUCTURED_SYSTEM_PROMPT,
+        responseMimeType: "application/json",
+        maxOutputTokens: 8192,
+      },
     });
-    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const raw = response.text ?? "{}";
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
