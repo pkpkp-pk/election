@@ -117,9 +117,8 @@ function loadState(): ScraperState | null {
 function parseCandidatePage(html: string, mynetaId: number): CandidateRow | null {
   if (!html || html.includes("Page Not Found")) return null;
 
-  // Reject CAPTCHA pages
-  if (html.includes("imagebuilder.php")) return null;
-
+  // Reject pure CAPTCHA pages (imagebuilder.php is also in footer forms on real pages,
+  // so only reject when it's the dominant content — i.e. no election tag panel present)
   // Must have the Lok Sabha 2024 election tag panel (w3-khaki), not just the breadcrumb
   if (!html.includes("w3-khaki") || !html.includes("Lok Sabha 2024")) return null;
 

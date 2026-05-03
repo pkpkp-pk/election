@@ -58,8 +58,7 @@ interface Bio {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const POPULAR_SEARCHES = [
-  "Narendra Modi", "Rahul Gandhi", "Amit Shah",
-  "Smriti Irani", "Akhilesh Yadav", "Kangana Ranaut",
+  "BJP", "INC", "DMK", "Tamil Nadu", "Rajasthan", "Bhupender Yadav",
 ];
 
 const PARTY_COLORS: Record<string, string> = {

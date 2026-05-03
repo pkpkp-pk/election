@@ -278,39 +278,45 @@ Rules:
 - If this is an obscure/unknown candidate, set brief to a short neutral statement and keep arrays minimal
 - Never fabricate specific criminal case details (real data is provided separately)`;
 
-// New endpoint: search candidates in DB, return real data + AI bio
-router.post("/openai/candidate-search", async (req, res) => {
-  const query = req.body?.query;
-  if (!query || typeof query !== "string" || query.trim().length === 0) {
-    res.status(400).json({ error: "Missing search query" });
-    return;
-  }
+// ─── Candidate Search (GET + POST) ───────────────────────────────────────────
 
-  const q = query.trim();
-
-  try {
-    // Search DB: name ILIKE, constituency ILIKE, party (full or short) ILIKE, or state ILIKE
-    const dbResults = await db
-      .select()
-      .from(candidates)
-      .where(
-        or(
-          ilike(candidates.name, `%${q}%`),
-          ilike(candidates.constituency, `%${q}%`),
-          ilike(candidates.party, `%${q}%`),
-          ilike(candidates.partyShort, `%${q}%`),
-          ilike(candidates.state, `%${q}%`)
-        )
+async function searchCandidates(q: string) {
+  return db
+    .select()
+    .from(candidates)
+    .where(
+      or(
+        ilike(candidates.name, `%${q}%`),
+        ilike(candidates.constituency, `%${q}%`),
+        ilike(candidates.party, `%${q}%`),
+        ilike(candidates.partyShort, `%${q}%`),
+        ilike(candidates.state, `%${q}%`)
       )
-      .orderBy(sql`CASE WHEN LOWER(name) LIKE LOWER(${`${q}%`}) THEN 0 ELSE 1 END`, candidates.name)
-      .limit(20);
+    )
+    .orderBy(sql`CASE WHEN LOWER(name) LIKE LOWER(${`${q}%`}) THEN 0 ELSE 1 END`, candidates.name)
+    .limit(20);
+}
 
-    res.json({
-      query: q,
-      total: dbResults.length,
-      candidates: dbResults,
-      source: "ADR/myneta.info via ECI affidavits",
-    });
+// GET /api/openai/candidate-search?q=Modi
+router.get("/openai/candidate-search", async (req, res) => {
+  const q = (req.query.q as string | undefined)?.trim() ?? "";
+  if (!q) { res.status(400).json({ error: "Missing ?q= query param" }); return; }
+  try {
+    const rows = await searchCandidates(q);
+    res.json({ query: q, total: rows.length, candidates: rows, source: "ADR/myneta.info via ECI affidavits" });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to search candidates" });
+  }
+});
+
+// POST /api/openai/candidate-search { query: "..." }
+router.post("/openai/candidate-search", async (req, res) => {
+  const q = (req.body?.query as string | undefined)?.trim() ?? "";
+  if (!q) { res.status(400).json({ error: "Missing search query" }); return; }
+  try {
+    const rows = await searchCandidates(q);
+    res.json({ query: q, total: rows.length, candidates: rows, source: "ADR/myneta.info via ECI affidavits" });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to search candidates" });
