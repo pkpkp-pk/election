@@ -323,6 +323,41 @@ Rules:
 - If this is an obscure/unknown candidate, set brief to a short neutral statement and keep arrays minimal
 - Never fabricate specific criminal case details (real data is provided separately)`;
 
+// ─── Candidate search cache ───────────────────────────────────────────────────
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_MAX_ENTRIES = 200;
+
+type CacheEntry<T> = { value: T; expiresAt: number };
+
+class TtlCache<T> {
+  private store = new Map<string, CacheEntry<T>>();
+
+  get(key: string): T | null {
+    const entry = this.store.get(key);
+    if (!entry) return null;
+    if (Date.now() > entry.expiresAt) {
+      this.store.delete(key);
+      return null;
+    }
+    return entry.value;
+  }
+
+  set(key: string, value: T): void {
+    if (this.store.size >= CACHE_MAX_ENTRIES) {
+      const oldestKey = this.store.keys().next().value;
+      if (oldestKey) this.store.delete(oldestKey);
+    }
+    this.store.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+  }
+
+  stats() {
+    return { size: this.store.size, maxSize: CACHE_MAX_ENTRIES, ttlMs: CACHE_TTL_MS };
+  }
+}
+
+const candidateSearchCache = new TtlCache<ReturnType<typeof mapCandidate>[]>();
+
 // ─── Candidate Search (GET + POST) ───────────────────────────────────────────
 
 type SupabaseCandidate = {
@@ -377,10 +412,18 @@ function mapCandidate(row: SupabaseCandidate) {
   };
 }
 
-async function searchCandidates(q: string) {
+async function searchCandidates(q: string): Promise<{ rows: ReturnType<typeof mapCandidate>[]; fromCache: boolean }> {
+  const cacheKey = q.toLowerCase().trim();
+
+  const cached = candidateSearchCache.get(cacheKey);
+  if (cached) {
+    return { rows: cached, fromCache: true };
+  }
+
   if (!supabase) {
     throw new Error("Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_ANON_KEY).");
   }
+
   const { data, error } = await supabase
     .from("candidates")
     .select("*")
@@ -391,14 +434,17 @@ async function searchCandidates(q: string) {
     .limit(20);
 
   if (error) throw error;
-  const rows = (data ?? []) as SupabaseCandidate[];
-  return rows
+
+  const rows = ((data ?? []) as SupabaseCandidate[])
     .sort((a, b) => {
       const aStarts = a.name.toLowerCase().startsWith(q.toLowerCase()) ? 0 : 1;
       const bStarts = b.name.toLowerCase().startsWith(q.toLowerCase()) ? 0 : 1;
       return aStarts - bStarts || a.name.localeCompare(b.name);
     })
     .map(mapCandidate);
+
+  candidateSearchCache.set(cacheKey, rows);
+  return { rows, fromCache: false };
 }
 
 // GET /api/openai/candidate-search?q=Modi
@@ -406,8 +452,8 @@ router.get("/openai/candidate-search", async (req, res) => {
   const q = (req.query.q as string | undefined)?.trim() ?? "";
   if (!q) { res.status(400).json({ error: "Missing ?q= query param" }); return; }
   try {
-    const rows = await searchCandidates(q);
-    res.json({ query: q, total: rows.length, candidates: rows, source: "ADR/myneta.info via ECI affidavits" });
+    const { rows, fromCache } = await searchCandidates(q);
+    res.json({ query: q, total: rows.length, candidates: rows, fromCache, source: "ADR/myneta.info via ECI affidavits" });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to search candidates" });
@@ -419,12 +465,17 @@ router.post("/openai/candidate-search", async (req, res) => {
   const q = (req.body?.query as string | undefined)?.trim() ?? "";
   if (!q) { res.status(400).json({ error: "Missing search query" }); return; }
   try {
-    const rows = await searchCandidates(q);
-    res.json({ query: q, total: rows.length, candidates: rows, source: "ADR/myneta.info via ECI affidavits" });
+    const { rows, fromCache } = await searchCandidates(q);
+    res.json({ query: q, total: rows.length, candidates: rows, fromCache, source: "ADR/myneta.info via ECI affidavits" });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to search candidates" });
   }
+});
+
+// GET /api/openai/candidate-search/cache-stats — useful for monitoring
+router.get("/openai/candidate-search/cache-stats", (_req, res) => {
+  res.json(candidateSearchCache.stats());
 });
 
 // Endpoint: get AI bio for a specific candidate — cache-first, generate with Gemini on miss
