@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "n2QdCrAL9NReC5DaRpYii"
+uri = "file://README.md"
+type = "text"
+title = "Vercel Deployment Guide — README.md"
