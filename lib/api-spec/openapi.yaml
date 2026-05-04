@@ -10,8 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
-  - name: openai
-    description: OpenAI AI chat operations
+  - name: gemini
+    description: Gemini AI chat operations
 paths:
   /healthz:
     get:
@@ -26,10 +26,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
-  /openai/conversations:
+  /gemini/conversations:
     get:
-      operationId: listOpenaiConversations
-      tags: [openai]
+      operationId: listGeminiConversations
+      tags: [gemini]
       summary: List all conversations
       responses:
         "200":
@@ -39,28 +39,28 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/OpenaiConversation"
+                  $ref: "#/components/schemas/GeminiConversation"
     post:
-      operationId: createOpenaiConversation
-      tags: [openai]
+      operationId: createGeminiConversation
+      tags: [gemini]
       summary: Create a new conversation
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateOpenaiConversationBody"
+              $ref: "#/components/schemas/CreateGeminiConversationBody"
       responses:
         "201":
           description: Created conversation
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OpenaiConversation"
-  /openai/conversations/{id}:
+                $ref: "#/components/schemas/GeminiConversation"
+  /gemini/conversations/{id}:
     get:
-      operationId: getOpenaiConversation
-      tags: [openai]
+      operationId: getGeminiConversation
+      tags: [gemini]
       summary: Get conversation with messages
       parameters:
         - name: id
@@ -74,16 +74,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OpenaiConversationWithMessages"
+                $ref: "#/components/schemas/GeminiConversationWithMessages"
         "404":
           description: Not found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OpenaiError"
+                $ref: "#/components/schemas/GeminiError"
     delete:
-      operationId: deleteOpenaiConversation
-      tags: [openai]
+      operationId: deleteGeminiConversation
+      tags: [gemini]
       summary: Delete a conversation
       parameters:
         - name: id
@@ -99,11 +99,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OpenaiError"
-  /openai/conversations/{id}/messages:
+                $ref: "#/components/schemas/GeminiError"
+  /gemini/conversations/{id}/messages:
     get:
-      operationId: listOpenaiMessages
-      tags: [openai]
+      operationId: listGeminiMessages
+      tags: [gemini]
       summary: List messages in a conversation
       parameters:
         - name: id
@@ -119,10 +119,10 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/OpenaiMessage"
+                  $ref: "#/components/schemas/GeminiMessage"
     post:
-      operationId: sendOpenaiMessage
-      tags: [openai]
+      operationId: sendGeminiMessage
+      tags: [gemini]
       summary: Send a text message and receive a streaming text response
       parameters:
         - name: id
@@ -135,7 +135,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SendOpenaiMessageBody"
+              $ref: "#/components/schemas/SendGeminiMessageBody"
       responses:
         "200":
           description: SSE stream of assistant text chunks
@@ -150,7 +150,7 @@ components:
           type: string
       required:
         - status
-    OpenaiConversation:
+    GeminiConversation:
       type: object
       properties:
         id:
@@ -164,7 +164,7 @@ components:
         - id
         - title
         - createdAt
-    OpenaiMessage:
+    GeminiMessage:
       type: object
       properties:
         id:
@@ -184,21 +184,21 @@ components:
         - role
         - content
         - createdAt
-    CreateOpenaiConversationBody:
+    CreateGeminiConversationBody:
       type: object
       properties:
         title:
           type: string
       required:
         - title
-    SendOpenaiMessageBody:
+    SendGeminiMessageBody:
       type: object
       properties:
         content:
           type: string
       required:
         - content
-    OpenaiConversationWithMessages:
+    GeminiConversationWithMessages:
       type: object
       properties:
         id:
@@ -211,13 +211,13 @@ components:
         messages:
           type: array
           items:
-            $ref: "#/components/schemas/OpenaiMessage"
+            $ref: "#/components/schemas/GeminiMessage"
       required:
         - id
         - title
         - createdAt
         - messages
-    OpenaiError:
+    GeminiError:
       type: object
       properties:
         error:

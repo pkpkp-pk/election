@@ -53,7 +53,7 @@ export function AskChunav() {
     setQuestion(q.trim());
     setInput("");
     try {
-      const res = await fetch("/api/openai/ask", {
+      const res = await fetch("/api/gemini/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q.trim() }),

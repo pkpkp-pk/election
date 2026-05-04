@@ -127,7 +127,7 @@ export default function ImmersiveHome() {
     setChat({ question: q, answer: "", keywords: [], loading: true });
     try {
       const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-      const res  = await fetch(`${base}/api/openai/ask`, {
+      const res  = await fetch(`${base}/api/gemini/ask`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
       });

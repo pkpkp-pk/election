@@ -240,7 +240,7 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
     setBioLoading(true);
     setBioError(false);
     try {
-      const res = await fetch("/api/openai/candidate-bio", {
+      const res = await fetch("/api/gemini/candidate-bio", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -616,7 +616,7 @@ export default function Candidates() {
     setError("");
     setSearched(q);
     try {
-      const res = await fetch("/api/openai/candidate-search", {
+      const res = await fetch("/api/gemini/candidate-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: q }),

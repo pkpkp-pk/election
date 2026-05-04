@@ -115,7 +115,7 @@ export function useHealthCheck<
  * @summary List all conversations
  */
 export const getListOpenaiConversationsUrl = () => {
-  return `/api/openai/conversations`;
+  return `/api/gemini/conversations`;
 };
 
 export const listOpenaiConversations = async (
@@ -128,7 +128,7 @@ export const listOpenaiConversations = async (
 };
 
 export const getListOpenaiConversationsQueryKey = () => {
-  return [`/api/openai/conversations`] as const;
+  return [`/api/gemini/conversations`] as const;
 };
 
 export const getListOpenaiConversationsQueryOptions = <
@@ -191,7 +191,7 @@ export function useListOpenaiConversations<
  * @summary Create a new conversation
  */
 export const getCreateOpenaiConversationUrl = () => {
-  return `/api/openai/conversations`;
+  return `/api/gemini/conversations`;
 };
 
 export const createOpenaiConversation = async (
@@ -278,7 +278,7 @@ export const useCreateOpenaiConversation = <
  * @summary Get conversation with messages
  */
 export const getGetOpenaiConversationUrl = (id: number) => {
-  return `/api/openai/conversations/${id}`;
+  return `/api/gemini/conversations/${id}`;
 };
 
 export const getOpenaiConversation = async (
@@ -295,7 +295,7 @@ export const getOpenaiConversation = async (
 };
 
 export const getGetOpenaiConversationQueryKey = (id: number) => {
-  return [`/api/openai/conversations/${id}`] as const;
+  return [`/api/gemini/conversations/${id}`] as const;
 };
 
 export const getGetOpenaiConversationQueryOptions = <
@@ -369,7 +369,7 @@ export function useGetOpenaiConversation<
  * @summary Delete a conversation
  */
 export const getDeleteOpenaiConversationUrl = (id: number) => {
-  return `/api/openai/conversations/${id}`;
+  return `/api/gemini/conversations/${id}`;
 };
 
 export const deleteOpenaiConversation = async (
@@ -453,7 +453,7 @@ export const useDeleteOpenaiConversation = <
  * @summary List messages in a conversation
  */
 export const getListOpenaiMessagesUrl = (id: number) => {
-  return `/api/openai/conversations/${id}/messages`;
+  return `/api/gemini/conversations/${id}/messages`;
 };
 
 export const listOpenaiMessages = async (
@@ -467,7 +467,7 @@ export const listOpenaiMessages = async (
 };
 
 export const getListOpenaiMessagesQueryKey = (id: number) => {
-  return [`/api/openai/conversations/${id}/messages`] as const;
+  return [`/api/gemini/conversations/${id}/messages`] as const;
 };
 
 export const getListOpenaiMessagesQueryOptions = <
@@ -540,7 +540,7 @@ export function useListOpenaiMessages<
  * @summary Send a text message and receive a streaming text response
  */
 export const getSendOpenaiMessageUrl = (id: number) => {
-  return `/api/openai/conversations/${id}/messages`;
+  return `/api/gemini/conversations/${id}/messages`;
 };
 
 export const sendOpenaiMessage = async (

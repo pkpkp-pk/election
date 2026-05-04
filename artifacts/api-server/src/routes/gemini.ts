@@ -108,7 +108,7 @@ For timeline questions, clearly divide into phases:
 - Avoid jargon — if a technical term is necessary, explain it immediately
 - You may respond in Hindi or English depending on what the user prefers`;
 
-router.get("/openai/conversations", async (req, res) => {
+router.get("/gemini/conversations", async (req, res) => {
   try {
     const result = await db.select().from(conversations).orderBy(conversations.createdAt);
     res.json(result);
@@ -118,7 +118,7 @@ router.get("/openai/conversations", async (req, res) => {
   }
 });
 
-router.post("/openai/conversations", async (req, res) => {
+router.post("/gemini/conversations", async (req, res) => {
   const parsed = CreateOpenaiConversationBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid request body" });
@@ -136,7 +136,7 @@ router.post("/openai/conversations", async (req, res) => {
   }
 });
 
-router.get("/openai/conversations/:id", async (req, res) => {
+router.get("/gemini/conversations/:id", async (req, res) => {
   const parsed = GetOpenaiConversationParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -163,7 +163,7 @@ router.get("/openai/conversations/:id", async (req, res) => {
   }
 });
 
-router.delete("/openai/conversations/:id", async (req, res) => {
+router.delete("/gemini/conversations/:id", async (req, res) => {
   const parsed = DeleteOpenaiConversationParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -185,7 +185,7 @@ router.delete("/openai/conversations/:id", async (req, res) => {
   }
 });
 
-router.get("/openai/conversations/:id/messages", async (req, res) => {
+router.get("/gemini/conversations/:id/messages", async (req, res) => {
   const parsed = ListOpenaiMessagesParams.safeParse(req.params);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -204,7 +204,7 @@ router.get("/openai/conversations/:id/messages", async (req, res) => {
   }
 });
 
-router.post("/openai/conversations/:id/messages", async (req, res) => {
+router.post("/gemini/conversations/:id/messages", async (req, res) => {
   const paramsParsed = SendOpenaiMessageParams.safeParse(req.params);
   if (!paramsParsed.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -447,8 +447,8 @@ async function searchCandidates(q: string): Promise<{ rows: ReturnType<typeof ma
   return { rows, fromCache: false };
 }
 
-// GET /api/openai/candidate-search?q=Modi
-router.get("/openai/candidate-search", async (req, res) => {
+// GET /api/gemini/candidate-search?q=Modi
+router.get("/gemini/candidate-search", async (req, res) => {
   const q = (req.query.q as string | undefined)?.trim() ?? "";
   if (!q) { res.status(400).json({ error: "Missing ?q= query param" }); return; }
   try {
@@ -460,8 +460,8 @@ router.get("/openai/candidate-search", async (req, res) => {
   }
 });
 
-// POST /api/openai/candidate-search { query: "..." }
-router.post("/openai/candidate-search", async (req, res) => {
+// POST /api/gemini/candidate-search { query: "..." }
+router.post("/gemini/candidate-search", async (req, res) => {
   const q = (req.body?.query as string | undefined)?.trim() ?? "";
   if (!q) { res.status(400).json({ error: "Missing search query" }); return; }
   try {
@@ -473,13 +473,13 @@ router.post("/openai/candidate-search", async (req, res) => {
   }
 });
 
-// GET /api/openai/candidate-search/cache-stats — useful for monitoring
-router.get("/openai/candidate-search/cache-stats", (_req, res) => {
+// GET /api/gemini/candidate-search/cache-stats — useful for monitoring
+router.get("/gemini/candidate-search/cache-stats", (_req, res) => {
   res.json(candidateSearchCache.stats());
 });
 
 // Endpoint: get AI bio for a specific candidate — cache-first, generate with Gemini on miss
-router.post("/openai/candidate-bio", async (req, res) => {
+router.post("/gemini/candidate-bio", async (req, res) => {
   const { mynetaId, name, party, constituency, criminalCases, totalAssetsText, age, profession, parentage } = req.body ?? {};
 
   if (!name || typeof name !== "string") {
@@ -559,7 +559,7 @@ router.post("/openai/candidate-bio", async (req, res) => {
 });
 
 // Legacy endpoint (kept for backward compat, uses AI only)
-router.post("/openai/candidate", async (req, res) => {
+router.post("/gemini/candidate", async (req, res) => {
   const name = req.body?.name;
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     res.status(400).json({ error: "Missing candidate name" });
@@ -617,7 +617,7 @@ router.post("/openai/candidate", async (req, res) => {
   }
 });
 
-router.post("/openai/ask", async (req, res) => {
+router.post("/gemini/ask", async (req, res) => {
   const question = req.body?.question;
   if (!question || typeof question !== "string" || question.trim().length === 0) {
     res.status(400).json({ error: "Missing question" });
