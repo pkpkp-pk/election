@@ -2,7 +2,7 @@ import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { createClient } from "@supabase/supabase-js";
 import { db } from "@workspace/db";
-import { conversations, messages, insertConversationSchema, insertMessageSchema, candidateBios } from "@workspace/db/schema";
+import { conversations, messages, insertConversationSchema, insertMessageSchema } from "@workspace/db/schema";
 import { ai } from "@workspace/integrations-gemini-ai";
 import { CreateOpenaiConversationBody, SendOpenaiMessageBody, GetOpenaiConversationParams, DeleteOpenaiConversationParams, SendOpenaiMessageParams, ListOpenaiMessagesParams } from "@workspace/api-zod";
 
@@ -488,28 +488,28 @@ router.post("/gemini/candidate-bio", async (req, res) => {
   }
 
   try {
-    // ── 1. Cache lookup by myneta_id — non-fatal if DB is unavailable ────────
-    if (mynetaId != null) {
+    // ── 1. Cache lookup via Supabase REST (bypasses pg/Drizzle SSL issues) ──
+    if (mynetaId != null && supabase) {
       try {
-        const [cached] = await db
-          .select()
-          .from(candidateBios)
-          .where(eq(candidateBios.mynetaId, Number(mynetaId)))
-          .limit(1);
+        const { data: cached } = await supabase
+          .from("candidate_bios")
+          .select("bio_json")
+          .eq("myneta_id", Number(mynetaId))
+          .limit(1)
+          .single();
 
-        if (cached) {
+        if (cached?.bio_json) {
           let bio: unknown;
-          try { bio = JSON.parse(cached.bioJson); } catch { bio = {}; }
+          try { bio = JSON.parse(cached.bio_json); } catch { bio = {}; }
           res.json({ bio, candidateName: name, cached: true });
           return;
         }
       } catch (cacheReadErr) {
-        // DB unavailable or SSL issue — log and skip cache, generate fresh
-        req.log.warn({ err: cacheReadErr }, "Bio cache read failed — skipping cache, generating fresh");
+        req.log.warn({ err: cacheReadErr }, "Bio cache read failed — generating fresh");
       }
     }
 
-    // ── 2. Generate with Gemini ────────────────────────────────────────────
+    // ── 2. Generate with Gemini (2.5-flash, fallback to 1.5-flash) ──────────
     const contextLines = [
       `Candidate: ${name}`,
       `Party: ${party ?? "Unknown"}`,
@@ -562,16 +562,17 @@ router.post("/gemini/candidate-bio", async (req, res) => {
       bio = { brief: "Biographical information not available.", parties_history: [], constituencies_history: [], major_works: [], popularity: { score: 3, description: "No data" } };
     }
 
-    // ── 3. Persist to cache if we have a myneta_id ───────────────────────────
-    if (mynetaId != null) {
+    // ── 3. Persist to cache via Supabase REST ─────────────────────────────────
+    if (mynetaId != null && supabase) {
       try {
-        await db.insert(candidateBios).values({
-          mynetaId: Number(mynetaId),
-          bioJson: JSON.stringify(bio),
-          modelVersion: "gemini-2.5-flash",
-        }).onConflictDoNothing();
-      } catch (cacheErr) {
-        req.log.warn({ cacheErr }, "Bio cache write failed — returning result anyway");
+        await supabase
+          .from("candidate_bios")
+          .upsert(
+            { myneta_id: Number(mynetaId), bio_json: JSON.stringify(bio), model_version: "gemini-2.5-flash" },
+            { onConflict: "myneta_id", ignoreDuplicates: true }
+          );
+      } catch (cacheWriteErr) {
+        req.log.warn({ err: cacheWriteErr }, "Bio cache write failed — returning result anyway");
       }
     }
 
