@@ -270,7 +270,7 @@ export function AskChunav() {
               {related.length > 0 && (
                 <div>
                   <div className="text-xs text-white/35 uppercase tracking-widest font-medium mb-4 text-center">
-                    Explore related topics — hover to preview, click to expand
+                    Explore related topics — click to expand
                   </div>
                   <div className="relative">
                     {/* Tooltip */}
