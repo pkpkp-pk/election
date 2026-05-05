@@ -488,19 +488,24 @@ router.post("/gemini/candidate-bio", async (req, res) => {
   }
 
   try {
-    // ── 1. Cache lookup by myneta_id (skip if no ID provided) ───────────────
+    // ── 1. Cache lookup by myneta_id — non-fatal if DB is unavailable ────────
     if (mynetaId != null) {
-      const [cached] = await db
-        .select()
-        .from(candidateBios)
-        .where(eq(candidateBios.mynetaId, Number(mynetaId)))
-        .limit(1);
+      try {
+        const [cached] = await db
+          .select()
+          .from(candidateBios)
+          .where(eq(candidateBios.mynetaId, Number(mynetaId)))
+          .limit(1);
 
-      if (cached) {
-        let bio: unknown;
-        try { bio = JSON.parse(cached.bioJson); } catch { bio = {}; }
-        res.json({ bio, candidateName: name, cached: true });
-        return;
+        if (cached) {
+          let bio: unknown;
+          try { bio = JSON.parse(cached.bioJson); } catch { bio = {}; }
+          res.json({ bio, candidateName: name, cached: true });
+          return;
+        }
+      } catch (cacheReadErr) {
+        // DB unavailable or SSL issue — log and skip cache, generate fresh
+        req.log.warn({ err: cacheReadErr }, "Bio cache read failed — skipping cache, generating fresh");
       }
     }
 
