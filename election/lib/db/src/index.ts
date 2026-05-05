@@ -10,13 +10,20 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-const rawConnectionString = process.env.DATABASE_URL;
-// Remove sslmode from the connection string so it doesn't override our explicit ssl config
-const connectionString = rawConnectionString.replace(/\?sslmode=[^&]+&?|&sslmode=[^&]+/, "");
-const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
+// Parse the DATABASE_URL manually to bypass pg-connection-string's SSL handling.
+// When passing a connectionString, pg internally uses pg-connection-string which
+// can re-apply sslmode from the URL and override our explicit ssl config — causing
+// "self-signed certificate in certificate chain" errors on Supabase's pooler.
+// By parsing ourselves and passing individual options, we retain full SSL control.
+const dbUrl = new URL(process.env.DATABASE_URL);
+const isLocal = dbUrl.hostname === "localhost" || dbUrl.hostname === "127.0.0.1";
 
 export const pool = new Pool({
-  connectionString,
+  host: dbUrl.hostname,
+  port: dbUrl.port ? parseInt(dbUrl.port, 10) : 5432,
+  user: decodeURIComponent(dbUrl.username),
+  password: decodeURIComponent(dbUrl.password),
+  database: dbUrl.pathname.slice(1), // strip leading "/"
   ssl: isLocal ? false : { rejectUnauthorized: false },
 });
 
