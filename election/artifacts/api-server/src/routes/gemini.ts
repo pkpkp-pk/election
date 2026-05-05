@@ -490,22 +490,19 @@ router.post("/gemini/candidate-bio", async (req, res) => {
   try {
     // ── 1. Cache lookup via Supabase REST (bypasses pg/Drizzle SSL issues) ──
     if (mynetaId != null && supabase) {
-      try {
-        const { data: cached } = await supabase
-          .from("candidate_bios")
-          .select("bio_json")
-          .eq("myneta_id", Number(mynetaId))
-          .limit(1)
-          .single();
+      const { data: cachedRows, error: cacheReadError } = await supabase
+        .from("candidate_bios")
+        .select("bio_json")
+        .eq("myneta_id", Number(mynetaId))
+        .limit(1);
 
-        if (cached?.bio_json) {
-          let bio: unknown;
-          try { bio = JSON.parse(cached.bio_json); } catch { bio = {}; }
-          res.json({ bio, candidateName: name, cached: true });
-          return;
-        }
-      } catch (cacheReadErr) {
-        req.log.warn({ err: cacheReadErr }, "Bio cache read failed — generating fresh");
+      if (cacheReadError) {
+        req.log.warn({ err: cacheReadError }, "Bio cache read error — generating fresh");
+      } else if (cachedRows && cachedRows.length > 0 && cachedRows[0].bio_json) {
+        let bio: unknown;
+        try { bio = JSON.parse(cachedRows[0].bio_json); } catch { bio = {}; }
+        res.json({ bio, candidateName: name, cached: true });
+        return;
       }
     }
 
@@ -564,15 +561,16 @@ router.post("/gemini/candidate-bio", async (req, res) => {
 
     // ── 3. Persist to cache via Supabase REST ─────────────────────────────────
     if (mynetaId != null && supabase) {
-      try {
-        await supabase
-          .from("candidate_bios")
-          .upsert(
-            { myneta_id: Number(mynetaId), bio_json: JSON.stringify(bio), model_version: "gemini-2.5-flash" },
-            { onConflict: "myneta_id", ignoreDuplicates: true }
-          );
-      } catch (cacheWriteErr) {
-        req.log.warn({ err: cacheWriteErr }, "Bio cache write failed — returning result anyway");
+      const { error: cacheWriteError } = await supabase
+        .from("candidate_bios")
+        .upsert(
+          { myneta_id: Number(mynetaId), bio_json: JSON.stringify(bio), model_version: "gemini-2.5-flash" },
+          { onConflict: "myneta_id", ignoreDuplicates: true }
+        );
+      if (cacheWriteError) {
+        req.log.warn({ err: cacheWriteError }, "Bio cache write failed");
+      } else {
+        req.log.info({ mynetaId }, "Bio cached successfully");
       }
     }
 
