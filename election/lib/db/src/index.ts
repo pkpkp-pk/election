@@ -10,7 +10,9 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-const connectionString = process.env.DATABASE_URL;
+const rawConnectionString = process.env.DATABASE_URL;
+// Remove sslmode from the connection string so it doesn't override our explicit ssl config
+const connectionString = rawConnectionString.replace(/\?sslmode=[^&]+&?|&sslmode=[^&]+/, "");
 const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
 
 export const pool = new Pool({
