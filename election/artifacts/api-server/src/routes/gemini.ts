@@ -517,20 +517,39 @@ router.post("/gemini/candidate-bio", async (req, res) => {
       `Source: ECI affidavit (Lok Sabha 2024)`,
     ].filter(Boolean);
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: `Generate biographical details for this candidate:\n\n${contextLines.join("\n")}` }],
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: `Generate biographical details for this candidate:\n\n${contextLines.join("\n")}` }],
+          },
+        ],
+        config: {
+          systemInstruction: CANDIDATE_BIO_PROMPT,
+          responseMimeType: "application/json",
+          maxOutputTokens: 8192,
         },
-      ],
-      config: {
-        systemInstruction: CANDIDATE_BIO_PROMPT,
-        responseMimeType: "application/json",
-        maxOutputTokens: 8192,
-      },
-    });
+      });
+    } catch (e: any) {
+      req.log.warn({ err: e }, "gemini-2.5-flash failed for candidate-bio, falling back to gemini-1.5-flash");
+      response = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: `Generate biographical details for this candidate:\n\n${contextLines.join("\n")}` }],
+          },
+        ],
+        config: {
+          systemInstruction: CANDIDATE_BIO_PROMPT,
+          responseMimeType: "application/json",
+          maxOutputTokens: 8192,
+        },
+      });
+    }
 
     const raw = response.text ?? "{}";
     let bio: unknown;
@@ -624,20 +643,41 @@ router.post("/gemini/ask", async (req, res) => {
     return;
   }
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: question.trim() }],
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: question.trim() }],
+          },
+        ],
+        config: {
+          systemInstruction: STRUCTURED_SYSTEM_PROMPT,
+          responseMimeType: "application/json",
+          maxOutputTokens: 8192,
         },
-      ],
-      config: {
-        systemInstruction: STRUCTURED_SYSTEM_PROMPT,
-        responseMimeType: "application/json",
-        maxOutputTokens: 8192,
-      },
-    });
+      });
+    } catch (e: any) {
+      // Fallback to 1.5 if 2.5 is overloaded (503)
+      req.log.warn({ err: e }, "gemini-2.5-flash failed, falling back to gemini-1.5-flash");
+      response = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: question.trim() }],
+          },
+        ],
+        config: {
+          systemInstruction: STRUCTURED_SYSTEM_PROMPT,
+          responseMimeType: "application/json",
+          maxOutputTokens: 8192,
+        },
+      });
+    }
+
     const raw = response.text ?? "{}";
     let parsed: unknown;
     try {
