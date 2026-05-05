@@ -58,11 +58,14 @@ export function AskChunav() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q.trim() }),
       });
-      if (!res.ok) throw new Error("Request failed");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Something went wrong. Please try again.");
+      }
       const data: AskResult = await res.json();
       setResult(data);
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (e: any) {
+      setError(e.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

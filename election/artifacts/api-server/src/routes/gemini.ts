@@ -571,9 +571,12 @@ router.post("/gemini/candidate-bio", async (req, res) => {
     }
 
     res.json({ bio, candidateName: name, cached: false });
-  } catch (err) {
+  } catch (err: any) {
     req.log.error(err);
-    res.status(500).json({ error: "Failed to fetch candidate bio" });
+    const msg = err?.status === 503 || err?.message?.includes("high demand")
+      ? "This AI model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+      : "Failed to fetch candidate bio";
+    res.status(503).json({ error: msg });
   }
 });
 
@@ -686,9 +689,12 @@ router.post("/gemini/ask", async (req, res) => {
       parsed = { answer: raw, related: [] };
     }
     res.json(parsed);
-  } catch (err) {
+  } catch (err: any) {
     req.log.error(err);
-    res.status(500).json({ error: "Failed to process question" });
+    const msg = err?.status === 503 || err?.message?.includes("high demand")
+      ? "This AI model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+      : "Failed to process question";
+    res.status(503).json({ error: msg });
   }
 });
 

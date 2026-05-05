@@ -230,7 +230,7 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
   const [expanded, setExpanded] = useState(false);
   const [bio, setBio] = useState<Bio | null>(null);
   const [bioLoading, setBioLoading] = useState(false);
-  const [bioError, setBioError] = useState(false);
+  const [bioError, setBioError] = useState<string | null>(null);
 
   const color = getPartyColor(candidate.party, candidate.partyShort);
   const initials = partyInitials(candidate.party, candidate.partyShort);
@@ -238,7 +238,7 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
   async function loadBio() {
     if (bio || bioLoading) return;
     setBioLoading(true);
-    setBioError(false);
+    setBioError(null);
     try {
       const res = await fetch("/api/gemini/candidate-bio", {
         method: "POST",
@@ -255,11 +255,14 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
           parentage: candidate.parentage,
         }),
       });
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed");
+      }
       const data = await res.json();
       setBio(data.bio as Bio);
-    } catch {
-      setBioError(true);
+    } catch (e: any) {
+      setBioError(e.message || "Could not load AI biography.");
     } finally {
       setBioLoading(false);
     }
@@ -455,7 +458,7 @@ function CandidateCard({ candidate }: { candidate: DbCandidate }) {
                   </div>
                 )}
                 {bioError && (
-                  <div className="text-sm text-red-500 py-2">Could not load AI biography.</div>
+                  <div className="text-sm text-red-500 py-2">{bioError}</div>
                 )}
                 {bio && !bioLoading && (
                   <div className="space-y-4">
